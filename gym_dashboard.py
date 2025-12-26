@@ -369,40 +369,49 @@ def api_posture_analyze():
             try:
                 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
                 
-                # 通常の可視化画像も生成
-                try:
-                    visualized_image = posture_visualizer.visualize_posture(image, keypoints, analysis)
-                    vis_filename = f"analyzed_{user_id}_{timestamp}.png"
-                    vis_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', vis_filename)
-                    cv2.imwrite(vis_path, visualized_image)
-                    visualized_image_url = url_for('uploaded_file', filename=f'visualizations/{vis_filename}')
-                    logger.info(f"可視化画像を保存: {vis_path}")
-                except Exception as e:
-                    logger.warning(f"可視化画像生成エラー: {e}")
-                
-                # 診断結果レポート画像を生成
-                report_image = posture_visualizer.create_diagnosis_report_image(image, keypoints, analysis)
-                report_filename = f"report_{user_id}_{timestamp}.png"
-                report_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', report_filename)
-                
-                # ディレクトリが存在するか確認
+                # 可視化ディレクトリを確実に作成
                 vis_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations')
                 os.makedirs(vis_dir, exist_ok=True)
                 logger.info(f"可視化ディレクトリ: {vis_dir}, 存在: {os.path.exists(vis_dir)}")
                 
-                success = cv2.imwrite(report_path, report_image)
-                if success:
-                    # ファイルが実際に保存されたか確認
-                    if os.path.exists(report_path):
-                        file_size = os.path.getsize(report_path)
-                        logger.info(f"診断結果レポート画像を保存: {report_path}, サイズ: {file_size} bytes")
-                        report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
-                        logger.info(f"診断結果レポート画像URL: {report_image_url}")
+                # 通常の可視化画像も生成
+                try:
+                    visualized_image = posture_visualizer.visualize_posture(image, keypoints, analysis)
+                    vis_filename = f"analyzed_{user_id}_{timestamp}.png"
+                    vis_path = os.path.join(vis_dir, vis_filename)
+                    success1 = cv2.imwrite(vis_path, visualized_image)
+                    if success1 and os.path.exists(vis_path):
+                        visualized_image_url = url_for('uploaded_file', filename=f'visualizations/{vis_filename}')
+                        logger.info(f"可視化画像を保存: {vis_path}, URL: {visualized_image_url}")
                     else:
-                        logger.error(f"画像ファイルが保存されませんでした: {report_path}")
+                        logger.error(f"可視化画像の保存に失敗: {vis_path}")
+                        visualized_image_url = None
+                except Exception as e:
+                    logger.error(f"可視化画像生成エラー: {e}", exc_info=True)
+                    visualized_image_url = None
+                
+                # 診断結果レポート画像を生成
+                try:
+                    report_image = posture_visualizer.create_diagnosis_report_image(image, keypoints, analysis)
+                    report_filename = f"report_{user_id}_{timestamp}.png"
+                    report_path = os.path.join(vis_dir, report_filename)
+                    
+                    success2 = cv2.imwrite(report_path, report_image)
+                    if success2:
+                        # ファイルが実際に保存されたか確認
+                        if os.path.exists(report_path):
+                            file_size = os.path.getsize(report_path)
+                            logger.info(f"診断結果レポート画像を保存: {report_path}, サイズ: {file_size} bytes")
+                            report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+                            logger.info(f"診断結果レポート画像URL: {report_image_url}")
+                        else:
+                            logger.error(f"画像ファイルが保存されませんでした: {report_path}")
+                            report_image_url = None
+                    else:
+                        logger.error(f"cv2.imwriteが失敗: {report_path}")
                         report_image_url = None
-                else:
-                    logger.error(f"cv2.imwriteが失敗: {report_path}")
+                except Exception as e:
+                    logger.error(f"診断結果レポート画像生成エラー: {e}", exc_info=True)
                     report_image_url = None
             except Exception as e:
                 logger.error(f"診断結果レポート画像生成エラー: {e}", exc_info=True)
