@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}姿勢診断{% endblock %}
+{% block page_title %}<i class="fas fa-user-md"></i> 姿勢診断{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> 姿勢診断について</h5>
+            </div>
+            <div class="card-body">
+                <p>姿勢診断機能では、YOLO11-Poseを使用してリアルタイムで姿勢を分析し、以下の項目を評価します：</p>
+                <ul>
+                    <li><strong>肩の水平度</strong>: 左右の肩の高さの違いを検出</li>
+                    <li><strong>骨盤の傾き</strong>: 骨盤の左右の高さの違いを検出</li>
+                    <li><strong>背骨の整列</strong>: 猫背や反り腰を検出</li>
+                    <li><strong>首の位置</strong>: ストレートネックや前傾姿勢を検出</li>
+                    <li><strong>頭部の位置</strong>: 頭部の中心からのずれを検出</li>
+                </ul>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    姿勢診断を開始するには、ユーザーを選択してカメラのアクセスを許可してください。
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-users"></i> ユーザーを選択</h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="row">
+                    {% for user in users %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-user fa-2x"></i>
+                                </div>
+                                <h5>{{ user.name }}</h5>
+                                <p class="text-muted small">{{ user.user_id }}</p>
+                                <a href="{{ url_for('posture_diagnosis_user', user_id=user.user_id) }}" class="btn btn-primary">
+                                    <i class="fas fa-camera"></i> 姿勢診断を開始
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-user-slash fa-3x mb-3"></i>
+                    <p>ユーザーが登録されていません</p>
+                    <a href="{{ url_for('add_user') }}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> 新規ユーザーを登録
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -84,6 +84,12 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'posture_diagnosis' or request.endpoint == 'posture_diagnosis_user' %}active{% endif %}" href="{{ url_for('posture_diagnosis') }}">
+                                <i class="fas fa-user-md me-2"></i>
+                                姿勢診断
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="#" onclick="startTrainingSession()">
                                 <i class="fas fa-play me-2"></i>
                                 セッション開始
