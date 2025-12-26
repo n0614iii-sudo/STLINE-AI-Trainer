@@ -25,6 +25,10 @@ data/*.json
 *.sqlite
 *.sqlite3
 
+# アップロードファイル
+uploads/
+uploads/**/*
+
 # IDE関連
 .vscode/
 .idea/
