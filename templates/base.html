@@ -406,6 +406,10 @@
             transform: translateZ(-20px);
         }
         
+        .page-title-3d[data-text=""]::after {
+            display: none;
+        }
+        
         /* テーブル - ガラス効果 */
         .table-glass {
             background: rgba(255, 255, 255, 0.05);
@@ -578,7 +582,7 @@
             <!-- メインコンテンツ -->
             <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-4 mb-4">
-                    <h1 class="page-title-3d" data-text="{% block page_title %}{% endblock %}">{% block page_title %}{% endblock %}</h1>
+                    <h1 class="page-title-3d" id="page-title">{% block page_title %}{% endblock %}</h1>
                 </div>
 
                 {% block content %}{% endblock %}
@@ -732,6 +736,14 @@
         
         // ページ読み込み時のアニメーション
         document.addEventListener('DOMContentLoaded', function() {
+            // ページタイトルのdata-text属性を設定
+            const pageTitle = document.getElementById('page-title');
+            if (pageTitle) {
+                const titleText = pageTitle.textContent.trim();
+                pageTitle.setAttribute('data-text', titleText);
+            }
+            
+            // カードのアニメーション
             const elements = document.querySelectorAll('.card-3d, .stats-card-3d');
             elements.forEach((el, index) => {
                 setTimeout(() => {
