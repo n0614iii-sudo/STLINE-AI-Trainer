@@ -298,58 +298,115 @@ class PostureAnalyzer:
                 # 耳がない場合は、目と鼻の中心を使用
                 if head_center_x is None:
                     head_points = []
-                    if "left_eye" in keypoints and keypoints["left_eye"].confidence > 0.3:
-                        head_points.append(keypoints["left_eye"])
-                    if "right_eye" in keypoints and keypoints["right_eye"].confidence > 0.3:
-                        head_points.append(keypoints["right_eye"])
-                    if "nose" in keypoints and keypoints["nose"].confidence > 0.3:
-                        head_points.append(keypoints["nose"])
+                    for kp_name in ["left_eye", "right_eye", "nose"]:
+                        if kp_name in keypoints:
+                            kp = keypoints[kp_name]
+                            kp_conf = kp.confidence if hasattr(kp, 'confidence') else (kp[2] if isinstance(kp, (list, tuple)) and len(kp) >= 3 else 0.0)
+                            if kp_conf > 0.3:
+                                head_points.append(kp)
                     
                     if len(head_points) >= 2:
-                        head_center_x = sum(p.x for p in head_points) / len(head_points)
-                        head_center_y = sum(p.y for p in head_points) / len(head_points)
+                        # PostureKeypointオブジェクトかタプルかを確認して座標を取得
+                        x_coords = []
+                        y_coords = []
+                        for p in head_points:
+                            if hasattr(p, 'x'):
+                                x_coords.append(p.x)
+                                y_coords.append(p.y)
+                            elif isinstance(p, (list, tuple)) and len(p) >= 2:
+                                x_coords.append(float(p[0]))
+                                y_coords.append(float(p[1]))
+                        
+                        if len(x_coords) >= 2:
+                            head_center_x = sum(x_coords) / len(x_coords)
+                            head_center_y = sum(y_coords) / len(y_coords)
                     elif len(head_points) == 1:
-                        head_center_x = head_points[0].x
-                        head_center_y = head_points[0].y
+                        p = head_points[0]
+                        if hasattr(p, 'x'):
+                            head_center_x = p.x
+                            head_center_y = p.y
+                        elif isinstance(p, (list, tuple)) and len(p) >= 2:
+                            head_center_x = float(p[0])
+                            head_center_y = float(p[1])
                 
                 # 頭部の中心が取得できた場合のみ評価
-                if head_center_x is not None and head_center_y is not None:
-                    # 左右のずれ（X方向）
-                    horizontal_offset = abs(head_center_x - shoulder_center_x)
-                    
-                    # 前後のずれ（Y方向、頭部が肩より前にある場合を検出）
-                    # 正常な頭部位置: 肩の中心より少し上（体高の約10-15%上）
-                    expected_head_y = shoulder_center_y - body_height * 0.12  # 頭部は肩より約12%上
-                    vertical_offset = abs(head_center_y - expected_head_y)
-                    
-                    # 左右のずれの評価（正常範囲: 体高の2%以内）
-                    normal_threshold_h = body_height * 0.02
-                    acceptable_threshold_h = body_height * 0.05
-                    
-                    # 前後のずれの評価（正常範囲: 体高の3%以内）
-                    normal_threshold_v = body_height * 0.03
-                    acceptable_threshold_v = body_height * 0.06
-                    
-                    # 左右と前後のずれを統合評価
-                    # より厳しい方の評価を使用
-                    score_h = 1.0
-                    if horizontal_offset <= normal_threshold_h:
+                if head_center_x is not None and head_center_y is not None and body_height > 0:
+                    try:
+                        # 左右のずれ（X方向）
+                        horizontal_offset = abs(head_center_x - shoulder_center_x)
+                        
+                        # 前後のずれ（Y方向、頭部が肩より前にある場合を検出）
+                        # 正常な頭部位置: 肩の中心より少し上（体高の約10-15%上）
+                        expected_head_y = shoulder_center_y - body_height * 0.12  # 頭部は肩より約12%上
+                        vertical_offset = abs(head_center_y - expected_head_y)
+                        
+                        # 左右のずれの評価（正常範囲: 体高の2%以内）
+                        normal_threshold_h = body_height * 0.02
+                        acceptable_threshold_h = body_height * 0.05
+                        
+                        # 前後のずれの評価（正常範囲: 体高の3%以内）
+                        normal_threshold_v = body_height * 0.03
+                        acceptable_threshold_v = body_height * 0.06
+                        
+                        # ゼロ除算を防ぐ
+                        if normal_threshold_h <= 0:
+                            normal_threshold_h = 1.0
+                        if acceptable_threshold_h <= 0:
+                            acceptable_threshold_h = 1.0
+                        if normal_threshold_v <= 0:
+                            normal_threshold_v = 1.0
+                        if acceptable_threshold_v <= 0:
+                            acceptable_threshold_v = 1.0
+                        
+                        # 左右と前後のずれを統合評価
                         score_h = 1.0
-                    elif horizontal_offset <= acceptable_threshold_h:
-                        score_h = max(0.7, 1.0 - ((horizontal_offset - normal_threshold_h) / (acceptable_threshold_h - normal_threshold_h)) * 0.3)
-                    else:
-                        score_h = max(0.0, 0.7 - ((horizontal_offset - acceptable_threshold_h) / acceptable_threshold_h) * 0.7)
-                    
-                    score_v = 1.0
-                    if vertical_offset <= normal_threshold_v:
+                        if horizontal_offset <= normal_threshold_h:
+                            score_h = 1.0
+                        elif horizontal_offset <= acceptable_threshold_h:
+                            if (acceptable_threshold_h - normal_threshold_h) > 0:
+                                score_h = max(0.7, 1.0 - ((horizontal_offset - normal_threshold_h) / (acceptable_threshold_h - normal_threshold_h)) * 0.3)
+                            else:
+                                score_h = 0.7
+                        else:
+                            if acceptable_threshold_h > 0:
+                                score_h = max(0.0, 0.7 - ((horizontal_offset - acceptable_threshold_h) / acceptable_threshold_h) * 0.7)
+                            else:
+                                score_h = 0.0
+                        
                         score_v = 1.0
-                    elif vertical_offset <= acceptable_threshold_v:
-                        score_v = max(0.7, 1.0 - ((vertical_offset - normal_threshold_v) / (acceptable_threshold_v - normal_threshold_v)) * 0.3)
-                    else:
-                        score_v = max(0.0, 0.7 - ((vertical_offset - acceptable_threshold_v) / acceptable_threshold_v) * 0.7)
-                    
-                    # 左右と前後のスコアの平均（重み付け: 左右60%、前後40%）
-                    scores["head_alignment"] = score_h * 0.6 + score_v * 0.4
+                        if vertical_offset <= normal_threshold_v:
+                            score_v = 1.0
+                        elif vertical_offset <= acceptable_threshold_v:
+                            if (acceptable_threshold_v - normal_threshold_v) > 0:
+                                score_v = max(0.7, 1.0 - ((vertical_offset - normal_threshold_v) / (acceptable_threshold_v - normal_threshold_v)) * 0.3)
+                            else:
+                                score_v = 0.7
+                        else:
+                            if acceptable_threshold_v > 0:
+                                score_v = max(0.0, 0.7 - ((vertical_offset - acceptable_threshold_v) / acceptable_threshold_v) * 0.7)
+                            else:
+                                score_v = 0.0
+                        
+                        # 左右と前後のスコアの平均（重み付け: 左右60%、前後40%）
+                        scores["head_alignment"] = score_h * 0.6 + score_v * 0.4
+                    except (ZeroDivisionError, ValueError, TypeError) as e:
+                        # エラーが発生した場合はデフォルト値を設定
+                        logger.warning(f"頭部位置評価エラー: {e}")
+                        scores["head_alignment"] = 0.5  # デフォルト値
+                elif head_center_x is not None and head_center_y is not None:
+                    # body_heightが0の場合は、左右のずれのみ評価
+                    try:
+                        horizontal_offset = abs(head_center_x - shoulder_center_x)
+                        # 固定閾値を使用（50ピクセル）
+                        if horizontal_offset <= 10:
+                            scores["head_alignment"] = 1.0
+                        elif horizontal_offset <= 25:
+                            scores["head_alignment"] = 0.7
+                        else:
+                            scores["head_alignment"] = max(0.0, 0.7 - (horizontal_offset - 25) / 25 * 0.7)
+                    except Exception as e:
+                        logger.warning(f"頭部位置評価エラー（body_height=0）: {e}")
+                        scores["head_alignment"] = 0.5  # デフォルト値
             
             # 背骨の直線性（医学的基準: 2cm以内の偏差が正常）
             if all(k in keypoints for k in ["left_shoulder", "right_shoulder", "left_hip", "right_hip"]):
