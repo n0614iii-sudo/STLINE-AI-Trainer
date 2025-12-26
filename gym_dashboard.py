@@ -69,7 +69,8 @@ def get_posture_detector():
     global posture_detector
     if posture_detector is None:
         try:
-            posture_detector = PostureDetector(device="cpu")  # RailwayではCPUを使用
+            # 精度向上のため、信頼度閾値を0.25に設定（より敏感な検出）
+            posture_detector = PostureDetector(device="cpu", conf_threshold=0.25)
         except Exception as e:
             logger.warning(f"姿勢検出器の初期化に失敗しました: {e}")
             posture_detector = None

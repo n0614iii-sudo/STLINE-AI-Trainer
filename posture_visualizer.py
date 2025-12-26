@@ -208,37 +208,65 @@ class PostureVisualizer:
         return image
     
     def _draw_evaluation_text(self, image: np.ndarray, analysis: PostureAnalysis) -> np.ndarray:
-        """評価項目を描画"""
+        """評価項目を描画（見やすく改善）"""
         h, w = image.shape[:2]
         
-        # 背景パネル
-        panel_height = 200
+        # 背景パネル（より濃く、見やすく）
+        panel_height = 220
         overlay = image.copy()
         cv2.rectangle(overlay, (0, h - panel_height), (w, h), (0, 0, 0), -1)
-        cv2.addWeighted(overlay, 0.7, image, 0.3, 0, image)
+        cv2.addWeighted(overlay, 0.85, image, 0.15, 0, image)  # より濃い背景
         
-        y_offset = h - panel_height + 20
-        x_offset = 20
+        y_offset = h - panel_height + 25
+        x_offset = 25
         
-        # 総合スコア
-        score_text = f"Overall Score: {int(analysis.overall_score * 100)}/100"
+        # 総合スコア（大きく、太く、背景付き）
+        score_text = f"総合スコア: {int(analysis.overall_score * 100)}/100"
         score_color = self._get_score_color(analysis.overall_score)
-        cv2.putText(image, score_text, (x_offset, y_offset), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, score_color, 2)
         
+        # テキストの背景を描画
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1.0
+        thickness = 3
+        (text_width, text_height), baseline = cv2.getTextSize(score_text, font, font_scale, thickness)
+        
+        # 背景矩形
+        cv2.rectangle(image, 
+                     (x_offset - 5, y_offset - text_height - 5),
+                     (x_offset + text_width + 5, y_offset + baseline + 5),
+                     (0, 0, 0), -1)
+        cv2.rectangle(image, 
+                     (x_offset - 5, y_offset - text_height - 5),
+                     (x_offset + text_width + 5, y_offset + baseline + 5),
+                     score_color, 2)
+        
+        cv2.putText(image, score_text, (x_offset, y_offset), 
+                   font, font_scale, score_color, thickness)
+        
+        y_offset += 40
+        
+        # アライメントスコア（見やすく改善）
+        title_text = "評価項目:"
+        font_scale_title = 0.7
+        thickness_title = 2
+        (title_width, title_height), _ = cv2.getTextSize(title_text, font, font_scale_title, thickness_title)
+        
+        # タイトルの背景
+        cv2.rectangle(image,
+                     (x_offset - 3, y_offset - title_height - 3),
+                     (x_offset + title_width + 3, y_offset + 3),
+                     (0, 0, 0), -1)
+        
+        cv2.putText(image, title_text, (x_offset, y_offset), 
+                   font, font_scale_title, (255, 255, 255), thickness_title)
         y_offset += 30
         
-        # アライメントスコア
-        cv2.putText(image, "Alignment Scores:", (x_offset, y_offset), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-        y_offset += 25
-        
         alignment_labels = {
-            "shoulder_alignment": "Shoulder",
-            "hip_alignment": "Hip",
-            "head_alignment": "Head",
-            "spine_alignment": "Spine",
-            "knee_alignment": "Knee"
+            "shoulder_alignment": "肩の水平度",
+            "hip_alignment": "骨盤の水平度",
+            "head_alignment": "頭部の位置",
+            "spine_alignment": "背骨の整列",
+            "knee_alignment": "膝の位置"
         }
         
         for key, label in alignment_labels.items():
@@ -246,46 +274,99 @@ class PostureVisualizer:
                 score = analysis.alignment_scores[key]
                 color = self._get_alignment_color(score)
                 text = f"  {label}: {int(score * 100)}%"
+                
+                # テキストの背景を描画
+                font_scale_item = 0.6
+                thickness_item = 2
+                (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale_item, thickness_item)
+                
+                cv2.rectangle(image,
+                             (x_offset - 3, y_offset - text_height - 2),
+                             (x_offset + text_width + 3, y_offset + baseline + 2),
+                             (0, 0, 0), -1)
+                
                 cv2.putText(image, text, (x_offset, y_offset), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
-                y_offset += 20
+                           font, font_scale_item, color, thickness_item)
+                y_offset += 25
         
-        # 右側に問題点を表示
-        x_right = w - 300
-        y_right = h - panel_height + 20
+        # 右側に問題点を表示（見やすく改善）
+        x_right = w - 350
+        y_right = h - panel_height + 25
         
         if analysis.issues:
-            cv2.putText(image, "Issues Detected:", (x_right, y_right), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-            y_right += 25
+            title_text = "検出された問題:"
+            font_scale_issue_title = 0.7
+            thickness_issue_title = 2
+            (title_width, title_height), _ = cv2.getTextSize(title_text, font, font_scale_issue_title, thickness_issue_title)
+            
+            # タイトルの背景
+            cv2.rectangle(image,
+                         (x_right - 3, y_right - title_height - 3),
+                         (x_right + title_width + 3, y_right + 3),
+                         (0, 0, 0), -1)
+            
+            cv2.putText(image, title_text, (x_right, y_right), 
+                       font, font_scale_issue_title, (255, 255, 255), thickness_issue_title)
+            y_right += 30
             
             for issue in analysis.issues[:3]:  # 最大3件
                 severity_color = self._get_severity_color(issue["severity"])
-                text = f"  - {issue['description']}"
-                cv2.putText(image, text, (x_right, y_right), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, severity_color, 1)
-                y_right += 20
+                text = f"  • {issue['description']}"
+                
+                # テキストの背景を描画
+                font_scale_issue = 0.6
+                thickness_issue = 2
+                (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale_issue, thickness_issue)
+                
+                # 背景矩形（色付き）
+                bg_color = (int(severity_color[0] * 0.3), int(severity_color[1] * 0.3), int(severity_color[2] * 0.3))
+                cv2.rectangle(image,
+                             (x_right - 5, y_right - text_height - 3),
+                             (x_right + text_width + 5, y_right + baseline + 3),
+                             bg_color, -1)
+                cv2.rectangle(image,
+                             (x_right - 5, y_right - text_height - 3),
+                             (x_right + text_width + 5, y_right + baseline + 3),
+                             severity_color, 1)
+                
+                cv2.putText(image, text, (x_right, y_offset), 
+                           font, font_scale_issue, severity_color, thickness_issue)
+                y_offset += 28
+        
+        return image
         
         return image
     
     def _draw_score_and_issues(self, image: np.ndarray, analysis: PostureAnalysis) -> np.ndarray:
-        """スコアと問題点を右上に描画"""
+        """スコアと問題点を右上に描画（見やすく改善）"""
         h, w = image.shape[:2]
         
-        # 総合スコアのバッジ
+        # 総合スコアのバッジ（大きく、見やすく）
         score_text = f"{int(analysis.overall_score * 100)}"
         score_color = self._get_score_color(analysis.overall_score)
         
-        # 背景円
-        cv2.circle(image, (w - 60, 60), 40, (0, 0, 0), -1)
-        cv2.circle(image, (w - 60, 60), 40, score_color, 3)
+        # 背景円（より大きく）
+        circle_center = (w - 70, 70)
+        circle_radius = 50
+        cv2.circle(image, circle_center, circle_radius, (0, 0, 0), -1)
+        cv2.circle(image, circle_center, circle_radius, score_color, 4)
         
-        # スコアテキスト
-        text_size = cv2.getTextSize(score_text, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 2)[0]
-        text_x = w - 60 - text_size[0] // 2
-        text_y = 60 + text_size[1] // 2
+        # スコアテキスト（大きく、太く）
+        font_scale = 1.5
+        thickness = 3
+        text_size = cv2.getTextSize(score_text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+        text_x = circle_center[0] - text_size[0] // 2
+        text_y = circle_center[1] + text_size[1] // 2
         cv2.putText(image, score_text, (text_x, text_y), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 1.2, score_color, 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, font_scale, score_color, thickness)
+        
+        # "点"のテキスト
+        point_text = "点"
+        point_size = cv2.getTextSize(point_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)[0]
+        point_x = circle_center[0] + text_size[0] // 2 + 5
+        point_y = circle_center[1] + point_size[1] // 2
+        cv2.putText(image, point_text, (point_x, point_y), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, score_color, 2)
         
         return image
     

@@ -256,50 +256,50 @@ class PostureAnalyzer:
         """姿勢の問題点を検出"""
         issues = []
         
-        # 肩の高さの違い
-        if "shoulder_alignment" in alignment_scores and alignment_scores["shoulder_alignment"] < 0.8:
+        # 肩の高さの違い（精度向上：閾値を調整）
+        if "shoulder_alignment" in alignment_scores and alignment_scores["shoulder_alignment"] < 0.85:
             issues.append({
                 "type": "shoulder_imbalance",
-                "severity": "medium" if alignment_scores["shoulder_alignment"] < 0.6 else "low",
+                "severity": "high" if alignment_scores["shoulder_alignment"] < 0.5 else ("medium" if alignment_scores["shoulder_alignment"] < 0.7 else "low"),
                 "description": "左右の肩の高さが異なります",
                 "impact": "首や肩の痛みの原因になる可能性があります"
             })
         
-        # 骨盤の傾き
-        if "hip_alignment" in alignment_scores and alignment_scores["hip_alignment"] < 0.8:
+        # 骨盤の傾き（精度向上：閾値を調整）
+        if "hip_alignment" in alignment_scores and alignment_scores["hip_alignment"] < 0.85:
             issues.append({
                 "type": "hip_imbalance",
-                "severity": "medium" if alignment_scores["hip_alignment"] < 0.6 else "low",
+                "severity": "high" if alignment_scores["hip_alignment"] < 0.5 else ("medium" if alignment_scores["hip_alignment"] < 0.7 else "low"),
                 "description": "骨盤が傾いています",
                 "impact": "腰痛や姿勢不良の原因になる可能性があります"
             })
         
-        # 猫背（前傾姿勢）
+        # 猫背（前傾姿勢）（精度向上：閾値を調整）
         if "spine_angle" in angles:
-            if angles["spine_angle"] < -10:  # 前傾
+            if angles["spine_angle"] < -8:  # 前傾（より敏感に検出）
                 issues.append({
                     "type": "forward_head_posture",
-                    "severity": "high" if angles["spine_angle"] < -20 else "medium",
+                    "severity": "high" if angles["spine_angle"] < -18 else ("medium" if angles["spine_angle"] < -12 else "low"),
                     "description": "猫背の傾向があります",
                     "impact": "首や肩の痛み、頭痛の原因になる可能性があります"
                 })
         
-        # 反り腰
+        # 反り腰（精度向上：閾値を調整）
         if "spine_angle" in angles:
-            if angles["spine_angle"] > 15:  # 後傾
+            if angles["spine_angle"] > 12:  # 後傾（より敏感に検出）
                 issues.append({
                     "type": "sway_back",
-                    "severity": "medium" if angles["spine_angle"] > 25 else "low",
+                    "severity": "high" if angles["spine_angle"] > 22 else ("medium" if angles["spine_angle"] > 18 else "low"),
                     "description": "反り腰の傾向があります",
                     "impact": "腰痛の原因になる可能性があります"
                 })
         
-        # 首の前傾
+        # 首の前傾（精度向上：閾値を調整）
         if "neck_angle" in angles:
-            if angles["neck_angle"] < -10:
+            if angles["neck_angle"] < -8:  # より敏感に検出
                 issues.append({
                     "type": "forward_head",
-                    "severity": "high" if angles["neck_angle"] < -20 else "medium",
+                    "severity": "high" if angles["neck_angle"] < -18 else ("medium" if angles["neck_angle"] < -12 else "low"),
                     "description": "首が前に出ています（ストレートネックの可能性）",
                     "impact": "首や肩の痛み、頭痛の原因になる可能性があります"
                 })
