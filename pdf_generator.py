@@ -9,15 +9,32 @@ import logging
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from pathlib import Path
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, letter
-from reportlab.lib.units import cm, mm
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak, KeepTogether
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, letter
+    from reportlab.lib.units import cm, mm
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak, KeepTogether
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+    REPORTLAB_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"reportlabのインポートに失敗しました: {e}")
+    REPORTLAB_AVAILABLE = False
+    # ダミーオブジェクトを定義
+    colors = None
+    A4 = None
+    cm = None
+    ParagraphStyle = None
+    SimpleDocTemplate = None
+    Paragraph = None
+    Spacer = None
+    Image = None
+    Table = None
+    TableStyle = None
+
 from PIL import Image as PILImage
 import io
 

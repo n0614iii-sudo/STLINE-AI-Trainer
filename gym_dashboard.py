@@ -18,7 +18,13 @@ from posture_analyzer import PostureAnalyzer, PostureAnalysis
 from posture_detector import PostureDetector
 from posture_visualizer import PostureVisualizer
 from posture_type_detector import PostureTypeDetector
-from pdf_generator import PDFGenerator
+try:
+    from pdf_generator import PDFGenerator
+    PDF_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"PDF生成モジュールのインポートに失敗しました: {e}")
+    PDF_AVAILABLE = False
+    PDFGenerator = None
 
 # 環境変数を読み込み
 load_dotenv()
@@ -907,6 +913,9 @@ def uploaded_file(filename):
 @app.route('/api/posture/pdf/<user_id>', methods=['POST'])
 def api_generate_pdf(user_id):
     """診断結果をPDF形式で生成"""
+    if not PDF_AVAILABLE or pdf_generator is None:
+        return jsonify({"status": "error", "message": "PDF生成機能は利用できません"}), 503
+    
     try:
         data = request.json
         analysis = data.get('analysis')
