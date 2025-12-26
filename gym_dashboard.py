@@ -571,6 +571,12 @@ def analyze_image_posture(image_path, user_id, posture_type):
                 conf = point[2] if len(point) >= 3 else 1.0
                 keypoints_tuple[name] = (float(x), float(y), float(conf))
         
+        # 姿勢タイプが指定されていない場合、自動判定
+        if not posture_type or posture_type == 'auto' or posture_type == 'standing':
+            detected_type, confidence = posture_type_detector.get_posture_type_confidence(keypoints_tuple)
+            posture_type = detected_type
+            logger.info(f"姿勢タイプを自動判定: {detected_type} (信頼度: {confidence:.2f})")
+        
         # 姿勢を分析
         analysis = posture_analyzer.analyze_posture(keypoints_tuple, posture_type)
         posture_analyzer.save_analysis(user_id, analysis)

@@ -11,6 +11,9 @@ from typing import Dict, Tuple, List, Optional
 from posture_analyzer import PostureKeypoint, PostureAnalysis
 from PIL import Image, ImageDraw, ImageFont
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PostureVisualizer:
@@ -579,7 +582,7 @@ class PostureVisualizer:
                     (int(start.x), int(start.y)),
                     (int(end.x), int(end.y)),
                     color,
-                    2
+                    line_thickness
                 )
         
         return image
