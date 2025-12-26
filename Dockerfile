@@ -16,10 +16,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Python依存関係のインストール
 # torchとtorchvisionをCPU版でインストール（サイズ削減）
-COPY requirements.txt .
+# requirements.txtからtorchとtorchvisionを除外したバージョンを使用
+COPY requirements.txt requirements-railway.txt* ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir -r requirements.txt
+    (pip install --no-cache-dir -r requirements-railway.txt 2>/dev/null || pip install --no-cache-dir -r requirements.txt)
 
 # アプリケーションコードのコピー
 COPY . .
