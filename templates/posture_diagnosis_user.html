@@ -423,8 +423,49 @@
         }
     }
     
+    // PDFを生成
+    async function generatePDF(analysis, reportImageUrl = null, xrayImageUrl = null, visualizedImageUrl = null) {
+        try {
+            const userId = '{{ user_id }}';
+            const userName = '{{ user.name if user else "" }}';
+            
+            const response = await fetch('/api/posture/pdf/' + userId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    analysis: analysis,
+                    user_name: userName,
+                    report_image_url: reportImageUrl,
+                    xray_image_url: xrayImageUrl,
+                    visualized_image_url: visualizedImageUrl
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'success' && data.pdf_url) {
+                // PDFをダウンロード
+                window.open(data.pdf_url, '_blank');
+                // または直接ダウンロード
+                const link = document.createElement('a');
+                link.href = data.pdf_url;
+                link.download = `posture_report_${userId}_${new Date().getTime()}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert('PDF生成に失敗しました: ' + (data.message || '不明なエラー'));
+            }
+        } catch (error) {
+            console.error('PDF生成エラー:', error);
+            alert('PDF生成中にエラーが発生しました: ' + error.message);
+        }
+    }
+    
     // 分析結果を表示
-    function displayAnalysisResult(analysis, visualizedImageUrl = null, reportImageUrl = null) {
+    function displayAnalysisResult(analysis, visualizedImageUrl = null, reportImageUrl = null, xrayImageUrl = null) {
         const resultCard = document.getElementById('resultCard');
         const resultContent = document.getElementById('resultContent');
         
