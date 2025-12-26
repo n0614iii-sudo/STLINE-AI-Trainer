@@ -105,12 +105,28 @@ class PostureDetector:
             keypoints_data = result.keypoints.data[0].cpu().numpy()
             keypoints_conf = result.keypoints.conf[0].cpu().numpy() if result.keypoints.conf is not None else None
             
-            # キーポイント辞書を作成（信頼度フィルタリングを緩和）
+            # 元の画像サイズと処理済み画像サイズを取得
+            orig_h, orig_w = image.shape[:2]
+            proc_h, proc_w = processed_image.shape[:2]
+            
+            # 座標変換のためのスケールを計算
+            scale_x = orig_w / proc_w
+            scale_y = orig_h / proc_h
+            
+            # キーポイント辞書を作成（信頼度フィルタリングを緩和、座標を元の画像サイズに変換）
             keypoints = {}
             for i, name in enumerate(self.KEYPOINT_NAMES):
                 if i < len(keypoints_data):
                     x, y = float(keypoints_data[i][0]), float(keypoints_data[i][1])
                     conf = float(keypoints_conf[i]) if keypoints_conf is not None and i < len(keypoints_conf) else 0.5
+                    
+                    # 座標を元の画像サイズに変換
+                    x = x * scale_x
+                    y = y * scale_y
+                    
+                    # 座標を画像範囲内に制限
+                    x = max(0, min(orig_w - 1, x))
+                    y = max(0, min(orig_h - 1, y))
                     
                     # 有効なキーポイントのみ追加（信頼度が0.2以上、または座標が有効）
                     if (x > 0 and y > 0) and (conf >= 0.2 or (x > 10 and y > 10)):
