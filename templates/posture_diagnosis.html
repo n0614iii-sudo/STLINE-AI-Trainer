@@ -55,17 +55,70 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="text-center text-muted py-5">
-                    <i class="fas fa-user-slash fa-3x mb-3"></i>
-                    <p>ユーザーが登録されていません</p>
-                    <a href="{{ url_for('add_user') }}" class="btn btn-primary">
-                        <i class="fas fa-user-plus"></i> 新規ユーザーを登録
-                    </a>
+                <div class="text-center text-white-50 py-5">
+                    <i class="fas fa-user-slash fa-4x mb-3" style="opacity: 0.5;"></i>
+                    <p class="mb-4">ユーザーが登録されていません</p>
+                    <div class="d-flex gap-3 justify-content-center flex-wrap">
+                        <a href="{{ url_for('add_user') }}" class="btn btn-3d">
+                            <i class="fas fa-user-plus me-2"></i> 新規ユーザーを登録
+                        </a>
+                        <button class="btn btn-3d" onclick="quickRegister()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <i class="fas fa-bolt me-2"></i> クイック登録
+                        </button>
+                    </div>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // クイック登録モーダル
+    function quickRegister() {
+        const name = prompt('名前を入力してください（クイック登録）:');
+        if (!name || !name.trim()) {
+            return;
+        }
+        
+        // ユーザーIDを自動生成
+        const timestamp = Date.now().toString().slice(-6);
+        const namePart = name.replace(/\s+/g, '').toLowerCase().substring(0, 5);
+        const userId = `user_${namePart}_${timestamp}`;
+        
+        const formData = {
+            user_id: userId,
+            name: name.trim(),
+            fitness_level: 'beginner',
+            preferred_language: 'ja',
+            target_goals: ['general_fitness'],
+            physical_limitations: []
+        };
+        
+        fetch('/add_user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('クイック登録が完了しました！');
+                // 姿勢診断ページに遷移
+                window.location.href = `/posture_diagnosis/${data.user_id}`;
+            } else {
+                alert('エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('登録に失敗しました。');
+        });
+    }
+</script>
 {% endblock %}
 

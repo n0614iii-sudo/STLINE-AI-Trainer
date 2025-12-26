@@ -1,163 +1,195 @@
 {% extends "base.html" %}
 
-{% block title %}新規ユーザー登録 - パーソナルジム AI{% endblock %}
+{% block title %}新規ユーザー登録 - STLINE AI Personal Trainer{% endblock %}
 {% block page_title %}新規ユーザー登録{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card">
+    <div class="col-lg-10">
+        <!-- クイック登録 -->
+        <div class="card-3d mb-4">
             <div class="card-header">
-                <i class="fas fa-user-plus"></i> 新規ユーザー登録
+                <h5 class="mb-0 text-white"><i class="fas fa-bolt me-2"></i> クイック登録（推奨）</h5>
             </div>
-            <div class="card-body">
-                <form method="POST" id="userForm">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="user_id" class="form-label">ユーザーID <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="user_id" name="user_id" required 
-                                       pattern="[a-zA-Z0-9_]+" placeholder="例: user001">
-                                <div class="form-text">英数字とアンダースコアのみ使用可能</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">名前 <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="name" name="name" required 
-                                       placeholder="例: 田中太郎">
-                            </div>
-                        </div>
+            <div class="card-body text-white">
+                <p class="text-white-50 mb-4">名前だけ入力すれば、すぐに登録できます。他の設定は後から変更できます。</p>
+                <form id="quickForm" class="row g-3">
+                    <div class="col-md-8">
+                        <label for="quick_name" class="form-label">名前 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control bg-dark text-white border-secondary" id="quick_name" 
+                               placeholder="例: 田中太郎" required>
                     </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="fitness_level" class="form-label">フィットネスレベル <span class="text-danger">*</span></label>
-                                <select class="form-select" id="fitness_level" name="fitness_level" required>
-                                    <option value="">選択してください</option>
-                                    <option value="beginner">初心者 - 運動習慣がない、基本から学びたい</option>
-                                    <option value="intermediate">中級者 - 定期的に運動している</option>
-                                    <option value="advanced">上級者 - 本格的なトレーニング経験がある</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="preferred_language" class="form-label">使用言語</label>
-                                <select class="form-select" id="preferred_language" name="preferred_language">
-                                    <option value="ja">日本語</option>
-                                    <option value="en">English</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="target_goals" class="form-label">目標 <span class="text-danger">*</span></label>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="weight_loss" id="goal_weight_loss">
-                                    <label class="form-check-label" for="goal_weight_loss">
-                                        体重減少・ダイエット
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="muscle_gain" id="goal_muscle_gain">
-                                    <label class="form-check-label" for="goal_muscle_gain">
-                                        筋肉増強・筋力向上
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="endurance" id="goal_endurance">
-                                    <label class="form-check-label" for="goal_endurance">
-                                        体力・持久力向上
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="flexibility" id="goal_flexibility">
-                                    <label class="form-check-label" for="goal_flexibility">
-                                        柔軟性・可動域改善
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="posture" id="goal_posture">
-                                    <label class="form-check-label" for="goal_posture">
-                                        姿勢改善
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="general_fitness" id="goal_general">
-                                    <label class="form-check-label" for="goal_general">
-                                        一般的な健康維持
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-text">一つまたは複数選択可能</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="physical_limitations" class="form-label">身体的制約・注意事項</label>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="knee_issues" id="limit_knee">
-                                    <label class="form-check-label" for="limit_knee">
-                                        膝の問題
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="back_issues" id="limit_back">
-                                    <label class="form-check-label" for="limit_back">
-                                        腰・背中の問題
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="shoulder_issues" id="limit_shoulder">
-                                    <label class="form-check-label" for="limit_shoulder">
-                                        肩の問題
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="heart_conditions" id="limit_heart">
-                                    <label class="form-check-label" for="limit_heart">
-                                        心疾患
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="high_blood_pressure" id="limit_bp">
-                                    <label class="form-check-label" for="limit_bp">
-                                        高血圧
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="other" id="limit_other">
-                                    <label class="form-check-label" for="limit_other">
-                                        その他
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <textarea class="form-control mt-2" id="limitations_notes" placeholder="その他の制約や詳細があれば記入してください"></textarea>
-                    </div>
-
-                    <hr>
-
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('users_list') }}" class="btn btn-secondary me-md-2">
-                            <i class="fas fa-arrow-left"></i> キャンセル
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> 登録
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-3d w-100">
+                            <i class="fas fa-rocket me-2"></i> すぐに登録
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- 詳細登録（オプション） -->
+        <div class="card-3d">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-white"><i class="fas fa-cog me-2"></i> 詳細登録（オプション）</h5>
+                    <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#detailedForm" aria-expanded="false">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body text-white">
+                <div class="collapse" id="detailedForm">
+                    <form method="POST" id="userForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="user_id" class="form-label">ユーザーID</label>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary" id="user_id" name="user_id" 
+                                           pattern="[a-zA-Z0-9_]+" placeholder="自動生成されます（空欄可）">
+                                    <div class="form-text text-white-50">空欄の場合は自動生成されます</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">名前 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control bg-dark text-white border-secondary" id="name" name="name" required 
+                                           placeholder="例: 田中太郎">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fitness_level" class="form-label">フィットネスレベル</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="fitness_level" name="fitness_level">
+                                        <option value="beginner" selected>初心者 - 運動習慣がない、基本から学びたい</option>
+                                        <option value="intermediate">中級者 - 定期的に運動している</option>
+                                        <option value="advanced">上級者 - 本格的なトレーニング経験がある</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="preferred_language" class="form-label">使用言語</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="preferred_language" name="preferred_language">
+                                        <option value="ja" selected>日本語</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">目標（複数選択可）</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="general_fitness" id="goal_general" checked>
+                                        <label class="form-check-label text-white-50" for="goal_general">
+                                            一般的な健康維持（デフォルト）
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="weight_loss" id="goal_weight_loss">
+                                        <label class="form-check-label text-white-50" for="goal_weight_loss">
+                                            体重減少・ダイエット
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="muscle_gain" id="goal_muscle_gain">
+                                        <label class="form-check-label text-white-50" for="goal_muscle_gain">
+                                            筋肉増強・筋力向上
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="endurance" id="goal_endurance">
+                                        <label class="form-check-label text-white-50" for="goal_endurance">
+                                            体力・持久力向上
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="flexibility" id="goal_flexibility">
+                                        <label class="form-check-label text-white-50" for="goal_flexibility">
+                                            柔軟性・可動域改善
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="posture" id="goal_posture">
+                                        <label class="form-check-label text-white-50" for="goal_posture">
+                                            姿勢改善
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="physical_limitations" class="form-label">身体的制約・注意事項（任意）</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="knee_issues" id="limit_knee">
+                                        <label class="form-check-label text-white-50" for="limit_knee">
+                                            膝の問題
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="back_issues" id="limit_back">
+                                        <label class="form-check-label text-white-50" for="limit_back">
+                                            腰・背中の問題
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="shoulder_issues" id="limit_shoulder">
+                                        <label class="form-check-label text-white-50" for="limit_shoulder">
+                                            肩の問題
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="heart_conditions" id="limit_heart">
+                                        <label class="form-check-label text-white-50" for="limit_heart">
+                                            心疾患
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="high_blood_pressure" id="limit_bp">
+                                        <label class="form-check-label text-white-50" for="limit_bp">
+                                            高血圧
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="other" id="limit_other">
+                                        <label class="form-check-label text-white-50" for="limit_other">
+                                            その他
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <textarea class="form-control bg-dark text-white border-secondary mt-2" id="limitations_notes" 
+                                      placeholder="その他の制約や詳細があれば記入してください"></textarea>
+                        </div>
+
+                        <hr class="border-secondary">
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('users_list') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> キャンセル
+                            </a>
+                            <button type="submit" class="btn btn-3d">
+                                <i class="fas fa-save"></i> 詳細設定で登録
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="text-center text-white-50">
+                    <small>詳細設定は後から変更できます</small>
+                </div>
             </div>
         </div>
     </div>
@@ -166,8 +198,46 @@
 
 {% block scripts %}
 <script>
+    // クイック登録
+    document.getElementById('quickForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('quick_name').value.trim();
+        if (!name) {
+            alert('名前を入力してください。');
+            return;
+        }
+        
+        // ユーザーIDを自動生成（名前から生成）
+        const userId = generateUserId(name);
+        
+        const formData = {
+            user_id: userId,
+            name: name,
+            fitness_level: 'beginner',  // デフォルト
+            preferred_language: 'ja',  // デフォルト
+            target_goals: ['general_fitness'],  // デフォルト
+            physical_limitations: []
+        };
+        
+        registerUser(formData, 'クイック登録が完了しました！');
+    });
+    
+    // 詳細登録
     document.getElementById('userForm').addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        const name = document.getElementById('name').value.trim();
+        if (!name) {
+            alert('名前を入力してください。');
+            return;
+        }
+        
+        // ユーザーIDが空の場合は自動生成
+        let userId = document.getElementById('user_id').value.trim();
+        if (!userId) {
+            userId = generateUserId(name);
+        }
         
         // 目標の収集
         const goals = [];
@@ -177,9 +247,9 @@
             }
         });
         
+        // 目標が選択されていない場合はデフォルト
         if (goals.length === 0) {
-            alert('少なくとも一つの目標を選択してください。');
-            return;
+            goals.push('general_fitness');
         }
         
         // 身体的制約の収集
@@ -191,10 +261,10 @@
         });
         
         const formData = {
-            user_id: document.getElementById('user_id').value,
-            name: document.getElementById('name').value,
-            fitness_level: document.getElementById('fitness_level').value,
-            preferred_language: document.getElementById('preferred_language').value,
+            user_id: userId,
+            name: name,
+            fitness_level: document.getElementById('fitness_level').value || 'beginner',
+            preferred_language: document.getElementById('preferred_language').value || 'ja',
             target_goals: goals,
             physical_limitations: limitations
         };
@@ -205,6 +275,19 @@
             limitations.push('notes:' + notes);
         }
         
+        registerUser(formData, 'ユーザーが正常に登録されました！');
+    });
+    
+    // ユーザーID自動生成
+    function generateUserId(name) {
+        // 名前からユーザーIDを生成
+        const timestamp = Date.now().toString().slice(-6);
+        const namePart = name.replace(/\s+/g, '').toLowerCase().substring(0, 5);
+        return `user_${namePart}_${timestamp}`;
+    }
+    
+    // ユーザー登録処理
+    function registerUser(formData, successMessage) {
         fetch('/add_user', {
             method: 'POST',
             headers: {
@@ -215,8 +298,9 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                alert('ユーザーが正常に登録されました！');
-                window.location.href = '{{ url_for("users_list") }}';
+                alert(successMessage);
+                // 姿勢診断ページに直接遷移
+                window.location.href = `/posture_diagnosis/${formData.user_id}`;
             } else {
                 alert('エラー: ' + data.message);
             }
@@ -225,14 +309,16 @@
             console.error('Error:', error);
             alert('登録に失敗しました。');
         });
-    });
+    }
     
-    // ユーザーIDの重複チェック（簡易版）
-    document.getElementById('user_id').addEventListener('blur', function() {
-        const userId = this.value;
-        if (userId) {
-            // 実際の実装では、サーバーサイドで重複チェックを行う
-            console.log('Checking user ID:', userId);
+    // クイック登録の名前を詳細登録にコピー
+    document.getElementById('quick_name').addEventListener('blur', function() {
+        const quickName = this.value.trim();
+        if (quickName) {
+            const detailedName = document.getElementById('name');
+            if (!detailedName.value.trim()) {
+                detailedName.value = quickName;
+            }
         }
     });
 </script>

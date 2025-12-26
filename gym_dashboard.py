@@ -160,20 +160,64 @@ def add_user():
     if request.method == 'POST':
         data = request.json if request.is_json else request.form
         
+        # ユーザーIDの重複チェック
+        user_id = data.get('user_id', '').strip()
+        if not user_id:
+            # ユーザーIDが空の場合は自動生成
+            import random
+            import string
+            timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+            random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+            user_id = f"user_{timestamp}_{random_str}"
+        
+        # 既存ユーザーIDのチェック
+        if user_id in trainer.user_profiles:
+            # 重複している場合は番号を追加
+            counter = 1
+            original_user_id = user_id
+            while user_id in trainer.user_profiles:
+                user_id = f"{original_user_id}_{counter}"
+                counter += 1
+        
+        # 名前の必須チェック
+        name = data.get('name', '').strip()
+        if not name:
+            if request.is_json:
+                return jsonify({"status": "error", "message": "名前は必須です"}), 400
+            else:
+                return redirect(url_for('add_user'))
+        
+        # デフォルト値の設定
+        fitness_level = data.get('fitness_level', 'beginner')
+        preferred_language = data.get('preferred_language', 'ja')
+        target_goals = data.get('target_goals', [])
+        if isinstance(target_goals, str):
+            target_goals = target_goals.split(',')
+        if not target_goals:
+            target_goals = ['general_fitness']  # デフォルト目標
+        
+        physical_limitations = data.get('physical_limitations', [])
+        if isinstance(physical_limitations, str):
+            physical_limitations = physical_limitations.split(',')
+        
         user_profile = UserProfile(
-            user_id=data['user_id'],
-            name=data['name'],
-            fitness_level=data['fitness_level'],
-            target_goals=data['target_goals'].split(',') if isinstance(data['target_goals'], str) else data['target_goals'],
-            physical_limitations=data['physical_limitations'].split(',') if data.get('physical_limitations') else [],
-            preferred_language=data.get('preferred_language', 'ja')
+            user_id=user_id,
+            name=name,
+            fitness_level=fitness_level,
+            target_goals=target_goals,
+            physical_limitations=physical_limitations,
+            preferred_language=preferred_language
         )
         
         trainer.add_user_profile(user_profile)
         trainer.save_config()
         
         if request.is_json:
-            return jsonify({"status": "success", "message": "ユーザーが登録されました"})
+            return jsonify({
+                "status": "success", 
+                "message": "ユーザーが登録されました",
+                "user_id": user_id
+            })
         else:
             return redirect(url_for('users_list'))
     
