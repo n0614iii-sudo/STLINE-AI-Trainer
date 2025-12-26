@@ -430,9 +430,140 @@
         return labels[key] || key;
     }
     
+    // ファイルアップロード機能
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.style.borderColor = 'rgba(240, 147, 251, 0.6)';
+            uploadArea.style.background = 'rgba(240, 147, 251, 0.1)';
+        }
+    }
+    
+    function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.style.borderColor = 'rgba(255,255,255,0.3)';
+            uploadArea.style.background = 'transparent';
+        }
+    }
+    
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.style.borderColor = 'rgba(255,255,255,0.3)';
+            uploadArea.style.background = 'transparent';
+        }
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileUpload(files[0]);
+        }
+    }
+    
+    function handleFileSelect(e) {
+        const files = e.target.files;
+        if (files.length > 0) {
+            handleFileUpload(files[0]);
+        }
+    }
+    
+    async function handleFileUpload(file) {
+        // ファイルサイズチェック
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (file.size > maxSize) {
+            alert('ファイルサイズが大きすぎます。最大100MBまでアップロードできます。');
+            return;
+        }
+        
+        // ファイル形式チェック
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('対応していないファイル形式です。画像（JPG, PNG, GIF）または動画（MP4, MOV, AVI, WEBM）を選択してください。');
+            return;
+        }
+        
+        // アップロード開始
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('user_id', '{{ user.user_id }}');
+        formData.append('posture_type', document.getElementById('postureType').value);
+        
+        const uploadProgress = document.getElementById('uploadProgress');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const progressBar = uploadProgress ? uploadProgress.querySelector('.progress-bar') : null;
+        
+        if (uploadProgress) uploadProgress.style.display = 'block';
+        if (progressBar) progressBar.style.width = '0%';
+        if (uploadStatus) uploadStatus.textContent = 'アップロード中...';
+        
+        try {
+            const xhr = new XMLHttpRequest();
+            
+            // アップロード進捗
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable && progressBar) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                }
+            });
+            
+            // アップロード完了
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        if (progressBar) progressBar.style.width = '100%';
+                        if (uploadStatus) uploadStatus.textContent = '分析中...';
+                        
+                        // 分析結果を表示
+                        if (response.analysis) {
+                            setTimeout(() => {
+                                displayAnalysisResult(response.analysis);
+                                if (uploadProgress) uploadProgress.style.display = 'none';
+                                if (uploadStatus) uploadStatus.textContent = '完了！';
+                            }, 500);
+                        }
+                    } else {
+                        if (uploadStatus) uploadStatus.textContent = 'エラー: ' + response.message;
+                        if (uploadProgress) uploadProgress.style.display = 'none';
+                    }
+                } else {
+                    if (uploadStatus) uploadStatus.textContent = 'アップロードに失敗しました';
+                    if (uploadProgress) uploadProgress.style.display = 'none';
+                }
+            });
+            
+            // エラーハンドリング
+            xhr.addEventListener('error', () => {
+                if (uploadStatus) uploadStatus.textContent = 'アップロードエラーが発生しました';
+                if (uploadProgress) uploadProgress.style.display = 'none';
+            });
+            
+            xhr.open('POST', '/api/posture/upload');
+            xhr.send(formData);
+            
+        } catch (error) {
+            console.error('アップロードエラー:', error);
+            alert('ファイルのアップロードに失敗しました。');
+            if (uploadProgress) uploadProgress.style.display = 'none';
+        }
+    }
+    
     // ページ読み込み時にカメラを初期化
     document.addEventListener('DOMContentLoaded', function() {
         initCamera();
+        
+        // モバイルデバイスの場合、カメラ機能を非表示にする場合がある
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            // モバイルデバイスではファイルアップロードを推奨
+            console.log('モバイルデバイスを検出しました');
+        }
     });
     
     // ページを離れる際にカメラを停止
