@@ -41,6 +41,35 @@
                     </select>
                 </div>
                 
+                <!-- 写真撮影ガイドライン -->
+                <div class="mt-4 pt-4 border-top border-secondary">
+                    <h6 class="text-white mb-3"><i class="fas fa-camera me-2"></i> 写真撮影のガイドライン</h6>
+                    <div class="alert alert-info bg-dark border-info" style="background: rgba(59, 130, 246, 0.2) !important;">
+                        <h6 class="text-white mb-2"><i class="fas fa-check-circle me-2"></i> 適切な解析のための条件</h6>
+                        <ul class="text-white-50 mb-0 small">
+                            <li><strong>全身が写る</strong>: 頭から足まで全体が写っていること</li>
+                            <li><strong>正面から撮影</strong>: 体の正面がカメラに向いていること</li>
+                            <li><strong>明るい環境</strong>: 十分な照明があること（暗いと検出精度が低下）</li>
+                            <li><strong>シンプルな背景</strong>: 背景が単色またはシンプルなこと</li>
+                            <li><strong>体の輪郭が見える</strong>: 体の輪郭がはっきり見える服装</li>
+                            <li><strong>両腕が見える</strong>: 両腕が体の横に自然に下がっていること</li>
+                            <li><strong>両足が見える</strong>: 両足が完全に見えること</li>
+                            <li><strong>動きがない</strong>: 静止した状態で撮影すること</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-warning bg-dark border-warning mt-2" style="background: rgba(245, 158, 11, 0.2) !important;">
+                        <h6 class="text-white mb-2"><i class="fas fa-exclamation-triangle me-2"></i> 避けるべき条件</h6>
+                        <ul class="text-white-50 mb-0 small">
+                            <li>横や後ろから撮影した写真</li>
+                            <li>体の一部が切れている写真</li>
+                            <li>暗すぎる、または逆光の写真</li>
+                            <li>複雑な背景（模様や他の人が写っている）</li>
+                            <li>動いている状態の写真</li>
+                            <li>体が大きく傾いている写真</li>
+                        </ul>
+                    </div>
+                </div>
+                
                 <!-- ファイルアップロード -->
                 <div class="mt-4 pt-4 border-top border-secondary">
                     <h6 class="text-white mb-3"><i class="fas fa-upload me-2"></i> 動画・画像から姿勢診断</h6>
@@ -313,7 +342,7 @@
     }
     
     // 分析結果を表示
-    function displayAnalysisResult(analysis) {
+    function displayAnalysisResult(analysis, visualizedImageUrl = null) {
         const resultCard = document.getElementById('resultCard');
         const resultContent = document.getElementById('resultContent');
         
@@ -324,7 +353,37 @@
                 </div>
                 <div class="text-muted">総合姿勢スコア</div>
             </div>
-            
+        `;
+        
+        // 可視化された画像を表示
+        if (visualizedImageUrl) {
+            html += `
+                <div class="mb-4">
+                    <h6 class="mb-3"><i class="fas fa-image me-2"></i> 姿勢分析結果画像</h6>
+                    <div class="text-center">
+                        <img src="${visualizedImageUrl}" alt="姿勢分析結果" class="img-fluid rounded" style="max-width: 100%; border: 2px solid rgba(255,255,255,0.2);">
+                        <div class="mt-2">
+                            <a href="${visualizedImageUrl}" download class="btn btn-3d btn-sm">
+                                <i class="fas fa-download me-2"></i> 画像をダウンロード
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 bg-dark rounded">
+                        <small class="text-white-50">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>画像の見方:</strong><br>
+                            • <span style="color: #00ff00;">緑の線</span>: 良好なアライメント<br>
+                            • <span style="color: #ffa500;">オレンジの線</span>: やや問題のあるアライメント<br>
+                            • <span style="color: #ff0000;">赤の線</span>: 問題のあるアライメント<br>
+                            • 円: 検出されたキーポイント<br>
+                            • 線: 骨格構造とアライメント
+                        </small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += `
             <div class="row mb-4">
                 <div class="col-md-6">
                     <h6><i class="fas fa-chart-pie"></i> 整列スコア</h6>
@@ -524,7 +583,7 @@
                         // 分析結果を表示
                         if (response.analysis) {
                             setTimeout(() => {
-                                displayAnalysisResult(response.analysis);
+                                displayAnalysisResult(response.analysis, response.visualized_image_url);
                                 if (uploadProgress) uploadProgress.style.display = 'none';
                                 if (uploadStatus) uploadStatus.textContent = '完了！';
                             }, 500);

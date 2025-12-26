@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from personal_gym_trainer import PersonalGymTrainer, UserProfile, WorkoutSession
 from posture_analyzer import PostureAnalyzer, PostureAnalysis
 from posture_detector import PostureDetector
+from posture_visualizer import PostureVisualizer
 
 # 環境変数を読み込み
 load_dotenv()
@@ -59,6 +60,9 @@ posture_analyzer = PostureAnalyzer()
 
 # 姿勢検出器インスタンス（必要に応じて初期化）
 posture_detector = None
+
+# 姿勢可視化器インスタンス
+posture_visualizer = PostureVisualizer()
 
 def get_posture_detector():
     """姿勢検出器を取得（遅延初期化）"""
@@ -443,6 +447,19 @@ def analyze_image_posture(image_path, user_id, posture_type):
         analysis = posture_analyzer.analyze_posture(keypoints_tuple, posture_type)
         posture_analyzer.save_analysis(user_id, analysis)
         
+        # 画像に姿勢評価を可視化
+        try:
+            visualized_image = posture_visualizer.visualize_posture(image, detected_keypoints, analysis)
+            
+            # 可視化された画像を保存
+            output_filename = f"analyzed_{timestamp}_{filename}"
+            output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', output_filename)
+            cv2.imwrite(output_path, visualized_image)
+            visualized_image_url = f"/uploads/images/{output_filename}"
+        except Exception as e:
+            logger.warning(f"画像可視化エラー: {e}")
+            visualized_image_url = None
+        
         return {
             "status": "success",
             "analysis": {
@@ -453,7 +470,8 @@ def analyze_image_posture(image_path, user_id, posture_type):
                 "alignment_scores": analysis.alignment_scores,
                 "keypoint_angles": analysis.keypoint_angles,
                 "timestamp": analysis.timestamp.isoformat()
-            }
+            },
+            "visualized_image_url": visualized_image_url
         }
     
     except Exception as e:
