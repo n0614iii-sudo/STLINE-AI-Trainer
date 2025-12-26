@@ -76,8 +76,17 @@ posture_visualizer = PostureVisualizer()
 # 姿勢タイプ自動判定器インスタンス
 posture_type_detector = PostureTypeDetector()
 
-# PDF生成器インスタンス
-pdf_generator = PDFGenerator()
+# PDF生成器インスタンス（利用可能な場合のみ）
+pdf_generator = None
+if PDF_AVAILABLE:
+    try:
+        pdf_generator = PDFGenerator()
+        logger.info("PDF生成器を初期化しました")
+    except Exception as e:
+        logger.warning(f"PDF生成器の初期化に失敗しました: {e}")
+        pdf_generator = None
+else:
+    logger.info("PDF生成機能は利用できません（reportlabがインストールされていません）")
 
 def get_posture_detector():
     """姿勢検出器を取得（遅延初期化）"""
