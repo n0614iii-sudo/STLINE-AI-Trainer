@@ -9,6 +9,8 @@ import numpy as np
 import math
 from typing import Dict, Tuple, List, Optional
 from posture_analyzer import PostureKeypoint, PostureAnalysis
+from PIL import Image, ImageDraw, ImageFont
+import os
 
 
 class PostureVisualizer:
@@ -44,7 +46,92 @@ class PostureVisualizer:
     
     def __init__(self):
         """可視化器を初期化"""
-        pass
+        # 日本語フォントのパスを取得
+        self.japanese_font = self._get_japanese_font()
+    
+    def _get_japanese_font(self, size=20):
+        """日本語フォントを取得"""
+        try:
+            # システムフォントを試す（macOS, Linux, Windows）
+            font_paths = [
+                # macOS
+                '/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc',
+                '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc',
+                '/Library/Fonts/ヒラギノ角ゴシック W3.ttc',
+                # Linux
+                '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+                # Windows
+                'C:/Windows/Fonts/msgothic.ttc',
+                'C:/Windows/Fonts/msmincho.ttc',
+            ]
+            
+            for font_path in font_paths:
+                if os.path.exists(font_path):
+                    try:
+                        return ImageFont.truetype(font_path, size)
+                    except:
+                        continue
+            
+            # フォールバック: デフォルトフォント
+            return ImageFont.load_default()
+        except:
+            return ImageFont.load_default()
+    
+    def _put_japanese_text(self, image: np.ndarray, text: str, position: Tuple[int, int], 
+                          font_size: int = 20, color: Tuple[int, int, int] = (255, 255, 255),
+                          thickness: int = 2) -> np.ndarray:
+        """
+        PILを使用して日本語テキストを描画
+        
+        Args:
+            image: OpenCV画像（BGR形式）
+            text: 描画するテキスト
+            position: 描画位置 (x, y)
+            font_size: フォントサイズ
+            color: 色 (B, G, R)
+            thickness: 線の太さ（PILでは使用しないが互換性のため）
+        
+        Returns:
+            描画された画像
+        """
+        try:
+            # OpenCV画像をPIL画像に変換（BGR -> RGB）
+            pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            draw = ImageDraw.Draw(pil_image)
+            
+            # フォントを取得
+            font = self._get_japanese_font(font_size)
+            
+            # テキストを描画
+            # PILの色はRGB形式なので、BGRからRGBに変換
+            rgb_color = (color[2], color[1], color[0])
+            draw.text(position, text, font=font, fill=rgb_color)
+            
+            # PIL画像をOpenCV画像に変換（RGB -> BGR）
+            return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+        except Exception as e:
+            # エラー時はOpenCVのデフォルトフォントで描画（英語のみ）
+            cv2.putText(image, text.encode('utf-8', 'replace').decode('utf-8', 'replace'), 
+                       position, cv2.FONT_HERSHEY_SIMPLEX, font_size / 20.0, color, thickness)
+            return image
+    
+    def _get_text_size_japanese(self, text: str, font_size: int = 20) -> Tuple[int, int]:
+        """日本語テキストのサイズを取得"""
+        try:
+            font = self._get_japanese_font(font_size)
+            # ダミー画像でサイズを測定
+            dummy_img = Image.new('RGB', (1000, 1000), (0, 0, 0))
+            draw = ImageDraw.Draw(dummy_img)
+            bbox = draw.textbbox((0, 0), text, font=font)
+            width = bbox[2] - bbox[0]
+            height = bbox[3] - bbox[1]
+            return (width, height)
+        except:
+            # フォールバック: OpenCVのサイズ計算
+            font_scale = font_size / 20.0
+            (width, height), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2)
+            return (width, height)
     
     def visualize_posture(
         self,
@@ -163,30 +250,28 @@ class PostureVisualizer:
         # 総合スコア
         score_text = f"総合スコア: {int(analysis.overall_score * 100)}/100"
         score_color = self._get_score_color(analysis.overall_score)
-        font_scale_score = 1.0
-        thickness_score = 3
-        (score_width, score_height), baseline = cv2.getTextSize(score_text, font, font_scale_score, thickness_score)
+        font_size_score = 20
+        score_width, score_height = self._get_text_size_japanese(score_text, font_size_score)
         
         # スコアの背景
         cv2.rectangle(report_image,
                      (x_offset - 10, y_offset - score_height - 10),
-                     (x_offset + score_width + 10, y_offset + baseline + 10),
+                     (x_offset + score_width + 10, y_offset + score_height + 10),
                      (30, 30, 40), -1)
         cv2.rectangle(report_image,
                      (x_offset - 10, y_offset - score_height - 10),
-                     (x_offset + score_width + 10, y_offset + baseline + 10),
+                     (x_offset + score_width + 10, y_offset + score_height + 10),
                      score_color, 2)
         
-        cv2.putText(report_image, score_text, (x_offset, y_offset), 
-                   font, font_scale_score, score_color, thickness_score)
+        report_image = self._put_japanese_text(report_image, score_text, (x_offset, y_offset), 
+                                               font_size=font_size_score, color=score_color, thickness=3)
         y_offset += score_height + 40
         
         # 検出された問題
         if analysis.issues:
             issues_title = "検出された問題"
-            font_scale_issues_title = 0.9
-            thickness_issues_title = 2
-            (issues_title_width, issues_title_height), _ = cv2.getTextSize(issues_title, font, font_scale_issues_title, thickness_issues_title)
+            font_size_issues_title = 18
+            issues_title_width, issues_title_height = self._get_text_size_japanese(issues_title, font_size_issues_title)
             
             # タイトルの背景
             cv2.rectangle(report_image,
@@ -198,8 +283,8 @@ class PostureVisualizer:
                          (x_offset + issues_title_width + 5, y_offset + 5),
                          (255, 100, 100), 2)
             
-            cv2.putText(report_image, issues_title, (x_offset, y_offset), 
-                       font, font_scale_issues_title, (255, 200, 200), thickness_issues_title)
+            report_image = self._put_japanese_text(report_image, issues_title, (x_offset, y_offset), 
+                                                   font_size=font_size_issues_title, color=(255, 200, 200), thickness=2)
             y_offset += issues_title_height + 25
             
             for issue in analysis.issues:
@@ -228,19 +313,17 @@ class PostureVisualizer:
                 # 問題の説明
                 desc_x = badge_x + severity_width + 20
                 desc_text = issue["description"]
-                font_scale_desc = 0.7
-                thickness_desc = 2
-                cv2.putText(report_image, desc_text, (desc_x, badge_y), 
-                           font, font_scale_desc, (255, 255, 255), thickness_desc)
+                font_size_desc = 14
+                report_image = self._put_japanese_text(report_image, desc_text, (desc_x, badge_y), 
+                                                      font_size=font_size_desc, color=(255, 255, 255), thickness=2)
                 y_offset += severity_height + 15
                 
                 # 影響の説明
                 if "impact" in issue:
                     impact_text = f"  → {issue['impact']}"
-                    font_scale_impact = 0.6
-                    thickness_impact = 1
-                    cv2.putText(report_image, impact_text, (desc_x, y_offset), 
-                               font, font_scale_impact, (200, 200, 200), thickness_impact)
+                    font_size_impact = 12
+                    report_image = self._put_japanese_text(report_image, impact_text, (desc_x, y_offset), 
+                                                          font_size=font_size_impact, color=(200, 200, 200), thickness=1)
                     y_offset += 25
                 else:
                     y_offset += 10
@@ -250,9 +333,8 @@ class PostureVisualizer:
         # 改善提案
         if analysis.recommendations:
             rec_title = "改善提案"
-            font_scale_rec_title = 0.9
-            thickness_rec_title = 2
-            (rec_title_width, rec_title_height), _ = cv2.getTextSize(rec_title, font, font_scale_rec_title, thickness_rec_title)
+            font_size_rec_title = 18
+            rec_title_width, rec_title_height = self._get_text_size_japanese(rec_title, font_size_rec_title)
             
             # タイトルの背景
             cv2.rectangle(report_image,
@@ -264,24 +346,23 @@ class PostureVisualizer:
                          (x_offset + rec_title_width + 5, y_offset + 5),
                          (100, 255, 100), 2)
             
-            cv2.putText(report_image, rec_title, (x_offset, y_offset), 
-                       font, font_scale_rec_title, (200, 255, 200), thickness_rec_title)
+            report_image = self._put_japanese_text(report_image, rec_title, (x_offset, y_offset), 
+                                                   font_size=font_size_rec_title, color=(200, 255, 200), thickness=2)
             y_offset += rec_title_height + 25
             
             for i, rec in enumerate(analysis.recommendations):
                 rec_text = f"  • {rec}"
-                font_scale_rec = 0.65
-                thickness_rec = 2
+                font_size_rec = 13
+                rec_width, rec_height = self._get_text_size_japanese(rec_text, font_size_rec)
                 
                 # テキストの背景
-                (rec_width, rec_height), baseline = cv2.getTextSize(rec_text, font, font_scale_rec, thickness_rec)
                 cv2.rectangle(report_image,
                              (x_offset - 3, y_offset - rec_height - 3),
-                             (x_offset + rec_width + 3, y_offset + baseline + 3),
+                             (x_offset + rec_width + 3, y_offset + rec_height + 3),
                              (25, 40, 25), -1)
                 
-                cv2.putText(report_image, rec_text, (x_offset, y_offset), 
-                           font, font_scale_rec, (200, 255, 200), thickness_rec)
+                report_image = self._put_japanese_text(report_image, rec_text, (x_offset, y_offset), 
+                                                       font_size=font_size_rec, color=(200, 255, 200), thickness=2)
                 y_offset += rec_height + 20
         
         y_offset += 20
@@ -292,9 +373,8 @@ class PostureVisualizer:
             # 硬い可能性のある筋肉
             if muscle_assessment.get('tight_muscles'):
                 tight_title = "硬い可能性のある筋肉"
-                font_scale_tight_title = 0.9
-                thickness_tight_title = 2
-                (tight_title_width, tight_title_height), _ = cv2.getTextSize(tight_title, font, font_scale_tight_title, thickness_tight_title)
+                font_size_tight_title = 18
+                tight_title_width, tight_title_height = self._get_text_size_japanese(tight_title, font_size_tight_title)
                 
                 # タイトルの背景
                 cv2.rectangle(report_image,
@@ -306,8 +386,8 @@ class PostureVisualizer:
                              (x_offset + tight_title_width + 5, y_offset + 5),
                              (255, 150, 50), 2)
                 
-                cv2.putText(report_image, tight_title, (x_offset, y_offset), 
-                           font, font_scale_tight_title, (255, 200, 150), thickness_tight_title)
+                report_image = self._put_japanese_text(report_image, tight_title, (x_offset, y_offset), 
+                                                       font_size=font_size_tight_title, color=(255, 200, 150), thickness=2)
                 y_offset += tight_title_height + 25
                 
                 for muscle in muscle_assessment['tight_muscles']:
@@ -325,17 +405,18 @@ class PostureVisualizer:
                                  (x_offset + muscle_width + 3, y_offset + 3),
                                  (int(severity_color[0] * 0.2), int(severity_color[1] * 0.2), int(severity_color[2] * 0.2)), -1)
                     
-                    cv2.putText(report_image, f"  • {muscle_name}", (x_offset, y_offset), 
-                               font, font_scale_muscle, severity_color, thickness_muscle)
+                    font_size_muscle = 14
+                    report_image = self._put_japanese_text(report_image, f"  • {muscle_name}", (x_offset, y_offset), 
+                                                          font_size=font_size_muscle, color=severity_color, thickness=2)
+                    muscle_height = self._get_text_size_japanese(f"  • {muscle_name}", font_size_muscle)[1]
                     y_offset += muscle_height + 15
                     
                     # 理由
                     if 'reason' in muscle:
                         reason_text = f"    → {muscle['reason']}"
-                        font_scale_reason = 0.6
-                        thickness_reason = 1
-                        cv2.putText(report_image, reason_text, (x_offset, y_offset), 
-                                   font, font_scale_reason, (200, 200, 200), thickness_reason)
+                        font_size_reason = 12
+                        report_image = self._put_japanese_text(report_image, reason_text, (x_offset, y_offset), 
+                                                              font_size=font_size_reason, color=(200, 200, 200), thickness=1)
                         y_offset += 20
                     else:
                         y_offset += 5
@@ -345,9 +426,8 @@ class PostureVisualizer:
             # ストレッチが必要な筋肉
             if muscle_assessment.get('stretch_needed'):
                 stretch_title = "ストレッチが必要な筋肉"
-                font_scale_stretch_title = 0.9
-                thickness_stretch_title = 2
-                (stretch_title_width, stretch_title_height), _ = cv2.getTextSize(stretch_title, font, font_scale_stretch_title, thickness_stretch_title)
+                font_size_stretch_title = 18
+                stretch_title_width, stretch_title_height = self._get_text_size_japanese(stretch_title, font_size_stretch_title)
                 
                 # タイトルの背景
                 cv2.rectangle(report_image,
@@ -359,8 +439,8 @@ class PostureVisualizer:
                              (x_offset + stretch_title_width + 5, y_offset + 5),
                              (50, 200, 100), 2)
                 
-                cv2.putText(report_image, stretch_title, (x_offset, y_offset), 
-                           font, font_scale_stretch_title, (150, 255, 200), thickness_stretch_title)
+                report_image = self._put_japanese_text(report_image, stretch_title, (x_offset, y_offset), 
+                                                      font_size=font_size_stretch_title, color=(150, 255, 200), thickness=2)
                 y_offset += stretch_title_height + 25
                 
                 for stretch in muscle_assessment['stretch_needed']:
@@ -380,17 +460,18 @@ class PostureVisualizer:
                                  (x_offset + stretch_width + 3, y_offset + baseline + 3),
                                  (15, 40, 25), -1)
                     
-                    cv2.putText(report_image, stretch_text, (x_offset, y_offset), 
-                               font, font_scale_stretch, (150, 255, 200), thickness_stretch)
+                    font_size_stretch = 13
+                    report_image = self._put_japanese_text(report_image, stretch_text, (x_offset, y_offset), 
+                                                          font_size=font_size_stretch, color=(150, 255, 200), thickness=2)
+                    stretch_height = self._get_text_size_japanese(stretch_text, font_size_stretch)[1]
                     y_offset += stretch_height + 15
                     
                     # 頻度
                     if frequency:
                         freq_text = f"    頻度: {frequency}"
-                        font_scale_freq = 0.6
-                        thickness_freq = 1
-                        cv2.putText(report_image, freq_text, (x_offset, y_offset), 
-                                   font, font_scale_freq, (150, 200, 150), thickness_freq)
+                        font_size_freq = 12
+                        report_image = self._put_japanese_text(report_image, freq_text, (x_offset, y_offset), 
+                                                              font_size=font_size_freq, color=(150, 200, 150), thickness=1)
                         y_offset += 20
                     else:
                         y_offset += 5
@@ -400,9 +481,8 @@ class PostureVisualizer:
             # 強化が必要な筋肉
             if muscle_assessment.get('strengthen_needed'):
                 strengthen_title = "強化が必要な筋肉"
-                font_scale_strengthen_title = 0.9
-                thickness_strengthen_title = 2
-                (strengthen_title_width, strengthen_title_height), _ = cv2.getTextSize(strengthen_title, font, font_scale_strengthen_title, thickness_strengthen_title)
+                font_size_strengthen_title = 18
+                strengthen_title_width, strengthen_title_height = self._get_text_size_japanese(strengthen_title, font_size_strengthen_title)
                 
                 # タイトルの背景
                 cv2.rectangle(report_image,
@@ -414,8 +494,8 @@ class PostureVisualizer:
                              (x_offset + strengthen_title_width + 5, y_offset + 5),
                              (150, 50, 200), 2)
                 
-                cv2.putText(report_image, strengthen_title, (x_offset, y_offset), 
-                           font, font_scale_strengthen_title, (200, 150, 255), thickness_strengthen_title)
+                report_image = self._put_japanese_text(report_image, strengthen_title, (x_offset, y_offset), 
+                                                      font_size=font_size_strengthen_title, color=(200, 150, 255), thickness=2)
                 y_offset += strengthen_title_height + 25
                 
                 for strengthen in muscle_assessment['strengthen_needed']:
@@ -435,17 +515,18 @@ class PostureVisualizer:
                                  (x_offset + strengthen_width + 3, y_offset + baseline + 3),
                                  (30, 15, 40), -1)
                     
-                    cv2.putText(report_image, strengthen_text, (x_offset, y_offset), 
-                               font, font_scale_strengthen, (200, 150, 255), thickness_strengthen)
+                    font_size_strengthen = 13
+                    report_image = self._put_japanese_text(report_image, strengthen_text, (x_offset, y_offset), 
+                                                          font_size=font_size_strengthen, color=(200, 150, 255), thickness=2)
+                    strengthen_height = self._get_text_size_japanese(strengthen_text, font_size_strengthen)[1]
                     y_offset += strengthen_height + 15
                     
                     # 頻度
                     if frequency:
                         freq_text = f"    頻度: {frequency}"
-                        font_scale_freq = 0.6
-                        thickness_freq = 1
-                        cv2.putText(report_image, freq_text, (x_offset, y_offset), 
-                                   font, font_scale_freq, (200, 150, 200), thickness_freq)
+                        font_size_freq = 12
+                        report_image = self._put_japanese_text(report_image, freq_text, (x_offset, y_offset), 
+                                                              font_size=font_size_freq, color=(200, 150, 200), thickness=1)
                         y_offset += 20
                     else:
                         y_offset += 5
@@ -590,24 +671,23 @@ class PostureVisualizer:
         score_text = f"総合スコア: {int(analysis.overall_score * 100)}/100"
         score_color = self._get_score_color(analysis.overall_score)
         
-        # テキストの背景を描画
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1.0
-        thickness = 3
-        (text_width, text_height), baseline = cv2.getTextSize(score_text, font, font_scale, thickness)
+        # 日本語テキストのサイズを取得
+        font_size = 20
+        text_width, text_height = self._get_text_size_japanese(score_text, font_size)
         
         # 背景矩形
         cv2.rectangle(image, 
                      (x_offset - 5, y_offset - text_height - 5),
-                     (x_offset + text_width + 5, y_offset + baseline + 5),
+                     (x_offset + text_width + 5, y_offset + text_height + 5),
                      (0, 0, 0), -1)
         cv2.rectangle(image, 
                      (x_offset - 5, y_offset - text_height - 5),
-                     (x_offset + text_width + 5, y_offset + baseline + 5),
+                     (x_offset + text_width + 5, y_offset + text_height + 5),
                      score_color, 2)
         
-        cv2.putText(image, score_text, (x_offset, y_offset), 
-                   font, font_scale, score_color, thickness)
+        # 日本語テキストを描画
+        image = self._put_japanese_text(image, score_text, (x_offset, y_offset), 
+                                        font_size=font_size, color=score_color, thickness=3)
         
         y_offset += 40
         
@@ -642,17 +722,16 @@ class PostureVisualizer:
                 text = f"  {label}: {int(score * 100)}%"
                 
                 # テキストの背景を描画
-                font_scale_item = 0.6
-                thickness_item = 2
-                (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale_item, thickness_item)
+                font_size_item = 12
+                text_width, text_height = self._get_text_size_japanese(text, font_size_item)
                 
                 cv2.rectangle(image,
                              (x_offset - 3, y_offset - text_height - 2),
-                             (x_offset + text_width + 3, y_offset + baseline + 2),
+                             (x_offset + text_width + 3, y_offset + text_height + 2),
                              (0, 0, 0), -1)
                 
-                cv2.putText(image, text, (x_offset, y_offset), 
-                           font, font_scale_item, color, thickness_item)
+                image = self._put_japanese_text(image, text, (x_offset, y_offset), 
+                                               font_size=font_size_item, color=color, thickness=2)
                 y_offset += 25
         
         # 右側に問題点を表示（見やすく改善）
@@ -661,9 +740,8 @@ class PostureVisualizer:
         
         if analysis.issues:
             title_text = "検出された問題:"
-            font_scale_issue_title = 0.7
-            thickness_issue_title = 2
-            (title_width, title_height), _ = cv2.getTextSize(title_text, font, font_scale_issue_title, thickness_issue_title)
+            font_size_issue_title = 14
+            title_width, title_height = self._get_text_size_japanese(title_text, font_size_issue_title)
             
             # タイトルの背景
             cv2.rectangle(image,
@@ -671,8 +749,8 @@ class PostureVisualizer:
                          (x_right + title_width + 3, y_right + 3),
                          (0, 0, 0), -1)
             
-            cv2.putText(image, title_text, (x_right, y_right), 
-                       font, font_scale_issue_title, (255, 255, 255), thickness_issue_title)
+            image = self._put_japanese_text(image, title_text, (x_right, y_right), 
+                                           font_size=font_size_issue_title, color=(255, 255, 255), thickness=2)
             y_right += 30
             
             for issue in analysis.issues[:3]:  # 最大3件

@@ -67,13 +67,14 @@ class PostureDetector:
             # 画像の前処理（精度向上のため）
             processed_image = self._preprocess_image(image)
             
-            # YOLOで推論（信頼度閾値を下げてより敏感に検出）
+            # YOLOで推論（信頼度閾値を下げてより敏感に検出、精度向上のため）
             results = self.model(
                 processed_image, 
                 conf=self.conf_threshold,  # より敏感な検出
                 iou=0.45,  # NMS閾値
                 imgsz=640,  # 入力画像サイズ（大きいほど精度向上）
-                verbose=False
+                verbose=False,
+                augment=True  # データ拡張で精度向上
             )
             
             if not results or len(results) == 0:
