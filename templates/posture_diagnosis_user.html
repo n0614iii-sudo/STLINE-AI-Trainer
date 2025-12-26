@@ -426,10 +426,21 @@
     // PDFを生成
     async function generatePDF(analysis, reportImageUrl = null, xrayImageUrl = null, visualizedImageUrl = null) {
         try {
-            const userId = '{{ user_id }}';
+            const userId = '{{ user.user_id }}';
             const userName = '{{ user.name if user else "" }}';
             
-            const response = await fetch('/api/posture/pdf/' + userId, {
+            if (!userId || userId === '') {
+                console.error('ユーザーIDが取得できませんでした');
+                alert('ユーザーIDが取得できませんでした。ページを再読み込みしてください。');
+                return;
+            }
+            
+            console.log('PDF生成を開始します。ユーザーID:', userId);
+            
+            const url = '/api/posture/pdf/' + encodeURIComponent(userId);
+            console.log('PDF生成APIを呼び出します:', url);
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -442,6 +453,12 @@
                     visualized_image_url: visualizedImageUrl
                 })
             });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('PDF生成APIエラー:', response.status, errorText);
+                throw new Error(`PDF生成APIエラー: ${response.status} ${errorText.substring(0, 100)}`);
+            }
             
             const data = await response.json();
             

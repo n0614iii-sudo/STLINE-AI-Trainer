@@ -967,10 +967,31 @@ def api_generate_pdf(user_id):
         os.makedirs(pdf_dir, exist_ok=True)
         pdf_path = os.path.join(pdf_dir, pdf_filename)
         
+        # analysisをPostureAnalysisオブジェクトに変換（辞書形式の場合）
+        if isinstance(analysis, dict):
+            try:
+                from datetime import datetime as dt
+                analysis_obj = PostureAnalysis(
+                    timestamp=dt.fromisoformat(analysis.get('timestamp', datetime.datetime.now().isoformat())),
+                    posture_type=analysis.get('posture_type', 'standing_front'),
+                    overall_score=analysis.get('overall_score', 0.0),
+                    issues=analysis.get('issues', []),
+                    recommendations=analysis.get('recommendations', []),
+                    keypoint_angles=analysis.get('keypoint_angles', {}),
+                    alignment_scores=analysis.get('alignment_scores', {}),
+                    detailed_metrics=analysis.get('detailed_metrics', {}),
+                    muscle_assessment=analysis.get('muscle_assessment', {})
+                )
+            except Exception as e:
+                logger.error(f"PostureAnalysisオブジェクトへの変換エラー: {e}")
+                return jsonify({"status": "error", "message": f"分析データの変換に失敗しました: {str(e)}"}), 400
+        else:
+            analysis_obj = analysis
+        
         # PDFを生成
         success = pdf_generator.generate_diagnosis_pdf(
             output_path=pdf_path,
-            analysis=analysis,
+            analysis=analysis_obj.__dict__ if hasattr(analysis_obj, '__dict__') else analysis,
             user_id=user_id,
             user_name=user_name,
             report_image_path=report_image_path,
