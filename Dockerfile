@@ -23,7 +23,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir opencv-python-headless>=4.8.0 && \
     (pip install --no-cache-dir -r requirements-railway.txt 2>/dev/null || pip install --no-cache-dir -r requirements.txt) && \
-    pip uninstall -y opencv-python 2>/dev/null || true
+    (pip uninstall -y opencv-python 2>/dev/null || true) && \
+    pip install --no-cache-dir --force-reinstall opencv-python-headless>=4.8.0
 
 # アプリケーションコードのコピー
 COPY . .
