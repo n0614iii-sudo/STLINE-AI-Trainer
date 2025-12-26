@@ -459,14 +459,30 @@ class PostureAnalyzer:
                     "impact": "首や肩の痛み、頭痛、めまい、眼精疲労の原因になる可能性があります"
                 })
         
-        # 頭部の位置
-        if "head_alignment" in alignment_scores and alignment_scores["head_alignment"] < 0.7:
-            issues.append({
-                "type": "head_misalignment",
-                "severity": "medium",
-                "description": "頭部が中心からずれています",
-                "impact": "首や肩の負担が増加する可能性があります"
-            })
+        # 頭部の位置（改善: より詳細な問題検出）
+        if "head_alignment" in alignment_scores:
+            head_score = alignment_scores["head_alignment"]
+            if head_score < 0.5:
+                issues.append({
+                    "type": "head_misalignment",
+                    "severity": "high",
+                    "description": "頭部が大きく中心からずれています",
+                    "impact": "首や肩の痛み、頭痛、めまいの原因になる可能性があります"
+                })
+            elif head_score < 0.7:
+                issues.append({
+                    "type": "head_misalignment",
+                    "severity": "medium",
+                    "description": "頭部が中心からずれています",
+                    "impact": "首や肩の負担が増加する可能性があります"
+                })
+            elif head_score < 0.85:
+                issues.append({
+                    "type": "head_misalignment",
+                    "severity": "low",
+                    "description": "頭部がわずかに中心からずれています",
+                    "impact": "長時間の姿勢不良の原因になる可能性があります"
+                })
         
         # 背骨の歪み
         if "spine_alignment" in alignment_scores and alignment_scores["spine_alignment"] < 0.7:
