@@ -1,120 +1,122 @@
 {% extends "base.html" %}
 
-{% block title %}ダッシュボード - パーソナルジム AI{% endblock %}
+{% block title %}ダッシュボード - STLINE AI Personal Trainer{% endblock %}
 {% block page_title %}ダッシュボード{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
-    <!-- 統計カード -->
-    <div class="col-xl-3 col-md-6">
-        <div class="card stats-card mb-4">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
-                            総ユーザー数
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-white">{{ total_users }}</div>
+    <!-- 統計カード - 3D効果 -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card-3d">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-white-50 text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">
+                        総ユーザー数
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-users fa-2x text-white-50"></i>
-                    </div>
+                    <div class="h2 mb-0 text-white fw-bold">{{ total_users }}</div>
+                </div>
+                <div class="stat-icon text-white">
+                    <i class="fas fa-users"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card stats-card mb-4">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
-                            総セッション数
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-white">{{ total_sessions }}</div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card-3d">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-white-50 text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">
+                        総セッション数
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-dumbbell fa-2x text-white-50"></i>
-                    </div>
+                    <div class="h2 mb-0 text-white fw-bold">{{ total_sessions }}</div>
+                </div>
+                <div class="stat-icon text-white">
+                    <i class="fas fa-dumbbell"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card stats-card mb-4">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
-                            今日のセッション
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-white" id="today-sessions">-</div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card-3d">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-white-50 text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">
+                        今日のセッション
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-calendar-day fa-2x text-white-50"></i>
-                    </div>
+                    <div class="h2 mb-0 text-white fw-bold" id="today-sessions">-</div>
+                </div>
+                <div class="stat-icon text-white">
+                    <i class="fas fa-calendar-day"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6">
-        <div class="card stats-card mb-4">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
-                            週間セッション
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-white" id="week-sessions">-</div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stats-card-3d">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-white-50 text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">
+                        週間セッション
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-line fa-2x text-white-50"></i>
-                    </div>
+                    <div class="h2 mb-0 text-white fw-bold" id="week-sessions">-</div>
+                </div>
+                <div class="stat-icon text-white">
+                    <i class="fas fa-chart-line"></i>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <!-- 最近のセッション -->
-    <div class="col-lg-8">
-        <div class="card">
+<div class="row mb-4">
+    <!-- 最近のセッション - 3Dカード -->
+    <div class="col-lg-8 mb-4">
+        <div class="card-3d">
             <div class="card-header">
-                <i class="fas fa-list"></i> 最近のトレーニングセッション
+                <i class="fas fa-list me-2"></i> 最近のトレーニングセッション
             </div>
-            <div class="card-body">
+            <div class="card-body text-white">
                 {% if recent_sessions %}
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-glass text-white">
                         <thead>
                             <tr>
-                                <th>ユーザー</th>
-                                <th>運動</th>
-                                <th>日時</th>
-                                <th>回数</th>
-                                <th>フォームスコア</th>
+                                <th class="text-white">ユーザー</th>
+                                <th class="text-white">運動</th>
+                                <th class="text-white">日時</th>
+                                <th class="text-white">回数</th>
+                                <th class="text-white">フォームスコア</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for session in recent_sessions %}
                             <tr>
-                                <td>{{ session.user_name }}</td>
                                 <td>
-                                    <span class="badge bg-primary">{{ session.exercise }}</span>
+                                    <i class="fas fa-user-circle me-2"></i>{{ session.user_name }}
                                 </td>
-                                <td>{{ session.date }}</td>
-                                <td>{{ session.reps }}回</td>
+                                <td>
+                                    <span class="badge-3d" style="background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);">
+                                        {{ session.exercise }}
+                                    </span>
+                                </td>
+                                <td class="text-white-50">{{ session.date }}</td>
+                                <td class="fw-bold">{{ session.reps }}回</td>
                                 <td>
                                     {% if session.form_score >= 0.8 %}
-                                        <span class="badge bg-success">{{ session.form_score }}</span>
+                                        <span class="badge-3d" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                            {{ session.form_score }}
+                                        </span>
                                     {% elif session.form_score >= 0.6 %}
-                                        <span class="badge bg-warning">{{ session.form_score }}</span>
+                                        <span class="badge-3d" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                                            {{ session.form_score }}
+                                        </span>
                                     {% else %}
-                                        <span class="badge bg-danger">{{ session.form_score }}</span>
+                                        <span class="badge-3d" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                                            {{ session.form_score }}
+                                        </span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -123,8 +125,8 @@
                     </table>
                 </div>
                 {% else %}
-                <div class="text-center text-muted">
-                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                <div class="text-center text-white-50 py-5">
+                    <i class="fas fa-inbox fa-4x mb-3" style="opacity: 0.5;"></i>
                     <p>まだセッションデータがありません</p>
                 </div>
                 {% endif %}
@@ -132,50 +134,50 @@
         </div>
     </div>
 
-    <!-- 運動別統計 -->
-    <div class="col-lg-4">
-        <div class="card">
+    <!-- 運動別統計 - 3Dカード -->
+    <div class="col-lg-4 mb-4">
+        <div class="card-3d">
             <div class="card-header">
-                <i class="fas fa-chart-pie"></i> 週間運動統計
+                <i class="fas fa-chart-pie me-2"></i> 週間運動統計
             </div>
-            <div class="card-body">
+            <div class="card-body text-white">
                 <canvas id="exerciseChart" width="100" height="100"></canvas>
             </div>
         </div>
     </div>
 </div>
 
-<!-- クイックアクション -->
-<div class="row mt-4">
+<!-- クイックアクション - 3Dカード -->
+<div class="row">
     <div class="col-12">
-        <div class="card">
+        <div class="card-3d">
             <div class="card-header">
-                <i class="fas fa-bolt"></i> クイックアクション
+                <i class="fas fa-bolt me-2"></i> クイックアクション
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ url_for('add_user') }}" class="btn btn-primary btn-lg w-100">
-                            <i class="fas fa-user-plus"></i><br>
-                            新規ユーザー登録
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('add_user') }}" class="btn btn-3d w-100 d-block text-decoration-none">
+                            <i class="fas fa-user-plus fa-2x mb-2"></i><br>
+                            <span>新規ユーザー登録</span>
                         </a>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <button class="btn btn-success btn-lg w-100" onclick="startTrainingSession()">
-                            <i class="fas fa-play"></i><br>
-                            セッション開始
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <button class="btn btn-3d w-100" onclick="startTrainingSession()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            <i class="fas fa-play-circle fa-2x mb-2"></i><br>
+                            <span>セッション開始</span>
                         </button>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ url_for('users_list') }}" class="btn btn-info btn-lg w-100">
-                            <i class="fas fa-users"></i><br>
-                            ユーザー一覧
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('users_list') }}" class="btn btn-3d w-100 d-block text-decoration-none" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                            <i class="fas fa-users fa-2x mb-2"></i><br>
+                            <span>ユーザー一覧</span>
                         </a>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{{ url_for('exercises_list') }}" class="btn btn-warning btn-lg w-100">
-                            <i class="fas fa-dumbbell"></i><br>
-                            運動メニュー
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <a href="{{ url_for('exercises_list') }}" class="btn btn-3d w-100 d-block text-decoration-none" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                            <i class="fas fa-dumbbell fa-2x mb-2"></i><br>
+                            <span>運動メニュー</span>
                         </a>
                     </div>
                 </div>
@@ -194,7 +196,7 @@
             document.getElementById('today-sessions').textContent = data.today_sessions;
             document.getElementById('week-sessions').textContent = data.week_sessions;
             
-            // 円グラフを作成
+            // 円グラフを作成（3D効果付き）
             const ctx = document.getElementById('exerciseChart').getContext('2d');
             const exerciseNames = Object.values(data.exercise_stats).map(stat => stat.name);
             const exerciseCounts = Object.values(data.exercise_stats).map(stat => stat.count);
@@ -207,31 +209,57 @@
                         datasets: [{
                             data: exerciseCounts,
                             backgroundColor: [
-                                '#667eea',
-                                '#764ba2',
-                                '#f093fb',
-                                '#f5576c',
-                                '#4facfe',
-                                '#00f2fe'
+                                'rgba(102, 126, 234, 0.8)',
+                                'rgba(118, 75, 162, 0.8)',
+                                'rgba(240, 147, 251, 0.8)',
+                                'rgba(245, 87, 108, 0.8)',
+                                'rgba(79, 172, 254, 0.8)',
+                                'rgba(0, 242, 254, 0.8)'
                             ],
-                            borderWidth: 0
+                            borderColor: [
+                                'rgba(102, 126, 234, 1)',
+                                'rgba(118, 75, 162, 1)',
+                                'rgba(240, 147, 251, 1)',
+                                'rgba(245, 87, 108, 1)',
+                                'rgba(79, 172, 254, 1)',
+                                'rgba(0, 242, 254, 1)'
+                            ],
+                            borderWidth: 2,
+                            hoverOffset: 10
                         }]
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
                         plugins: {
                             legend: {
-                                position: 'bottom'
+                                position: 'bottom',
+                                labels: {
+                                    color: 'rgba(255, 255, 255, 0.9)',
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: 'rgba(240, 147, 251, 0.5)',
+                                borderWidth: 1
                             }
+                        },
+                        animation: {
+                            animateRotate: true,
+                            animateScale: true
                         }
                     }
                 });
             } else {
-                // データがない場合の表示
                 ctx.canvas.style.display = 'none';
                 const container = ctx.canvas.parentElement;
-                container.innerHTML = '<div class="text-center text-muted"><i class="fas fa-chart-pie fa-3x mb-3"></i><p>統計データがありません</p></div>';
+                container.innerHTML = '<div class="text-center text-white-50 py-4"><i class="fas fa-chart-pie fa-4x mb-3" style="opacity: 0.5;"></i><p>統計データがありません</p></div>';
             }
         })
         .catch(error => {

@@ -3,71 +3,539 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}パーソナルジム AI{% endblock %}</title>
+    <title>{% block title %}STLINE AI Personal Trainer{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
     <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f093fb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f0c29;
+            --light: #f8f9fa;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            background-color: #f8f9fa;
-        }
-        .sidebar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Noto Sans JP', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
             min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            perspective: 1000px;
         }
+        
+        /* パーティクル背景 */
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            opacity: 0.6;
+        }
+        
+        /* 3Dグリッド背景 */
+        .grid-background {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-image: 
+                linear-gradient(rgba(102, 126, 234, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(102, 126, 234, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        /* サイドバー - 3D効果 */
+        .sidebar {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            min-height: 100vh;
+            position: relative;
+            transform-style: preserve-3d;
+            box-shadow: 
+                10px 0 30px rgba(0, 0, 0, 0.3),
+                inset -5px 0 20px rgba(255, 255, 255, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .sidebar .brand {
+            padding: 2rem 1.5rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            transform-style: preserve-3d;
+        }
+        
+        .sidebar .brand .logo-3d {
+            display: inline-block;
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease;
+            animation: float3D 3s ease-in-out infinite;
+        }
+        
+        @keyframes float3D {
+            0%, 100% { transform: translateY(0) rotateY(0deg); }
+            50% { transform: translateY(-10px) rotateY(5deg); }
+        }
+        
+        .sidebar .brand .logo-3d:hover {
+            transform: rotateY(360deg) scale(1.1);
+        }
+        
+        .sidebar .brand h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #fff 0%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(240, 147, 251, 0.5);
+            margin: 1rem 0;
+            letter-spacing: 2px;
+        }
+        
+        .sidebar .brand .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        
+        /* ナビゲーションリンク - 3D効果 */
         .sidebar .nav-link {
             color: white !important;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.5rem;
+            padding: 1.2rem 1.5rem;
+            margin: 0.5rem 1rem;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
         }
+        
+        .sidebar .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .sidebar .nav-link:hover::before {
+            left: 100%;
+        }
+        
         .sidebar .nav-link:hover {
-            background-color: rgba(255,255,255,0.1);
+            transform: translateX(10px) translateZ(20px) rotateY(5deg);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(240, 147, 251, 0.3);
+            border-color: rgba(255, 255, 255, 0.3);
         }
+        
         .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.2);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(240, 147, 251, 0.2) 100%);
+            transform: translateX(5px) translateZ(10px);
+            box-shadow: 
+                0 5px 20px rgba(0, 0, 0, 0.2),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            border-color: rgba(240, 147, 251, 0.5);
         }
-        .card {
+        
+        .sidebar .nav-link i {
+            width: 25px;
+            text-align: center;
+            font-size: 1.2rem;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+        
+        .sidebar .nav-link:hover i {
+            transform: scale(1.3) rotateY(360deg);
+        }
+        
+        /* メインコンテンツエリア */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        /* 3Dカード */
+        .card-3d {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            transform-style: preserve-3d;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+        
+        .card-3d::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(240, 147, 251, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .card-3d:hover::before {
+            opacity: 1;
+        }
+        
+        .card-3d:hover {
+            transform: translateY(-10px) rotateX(5deg) rotateY(-5deg) scale(1.02);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(240, 147, 251, 0.3),
+                inset 0 0 30px rgba(255, 255, 255, 0.1);
+            border-color: rgba(240, 147, 251, 0.3);
+        }
+        
+        .card-3d .card-header {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(240, 147, 251, 0.3) 100%);
             border: none;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border-radius: 1rem;
-        }
-        .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: -2rem -2rem 2rem -2rem;
             color: white;
-            border-radius: 1rem 1rem 0 0 !important;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        
+        .card-3d .card-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shine 3s infinite;
+        }
+        
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        /* 統計カード - 3D効果 */
+        .stats-card-3d {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(240, 147, 251, 0.8) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            transform-style: preserve-3d;
+            transition: all 0.5s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.3),
+                inset 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+        
+        .stats-card-3d::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: rotate 10s linear infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats-card-3d:hover {
+            transform: translateY(-15px) rotateX(10deg) scale(1.05);
+            box-shadow: 
+                0 25px 60px rgba(0, 0, 0, 0.4),
+                0 0 50px rgba(240, 147, 251, 0.5);
+        }
+        
+        .stats-card-3d .stat-icon {
+            font-size: 3rem;
+            opacity: 0.8;
+            transform: translateZ(30px);
+            transition: transform 0.3s;
+        }
+        
+        .stats-card-3d:hover .stat-icon {
+            transform: translateZ(50px) rotateY(360deg) scale(1.2);
+        }
+        
+        /* ボタン - 3D効果 */
+        .btn-3d {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             border: none;
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-        }
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 1rem 2rem;
             color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transform-style: preserve-3d;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 5px 20px rgba(102, 126, 234, 0.4),
+                inset 0 0 10px rgba(255, 255, 255, 0.2);
         }
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.5rem;
+        
+        .btn-3d::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-3d:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-3d:hover {
+            transform: translateY(-5px) translateZ(20px) rotateX(5deg);
+            box-shadow: 
+                0 15px 40px rgba(102, 126, 234, 0.6),
+                0 0 30px rgba(240, 147, 251, 0.4);
+        }
+        
+        .btn-3d:active {
+            transform: translateY(-2px) translateZ(10px);
+        }
+        
+        /* ページタイトル - 3D効果 */
+        .page-title-3d {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 3rem;
+            background: linear-gradient(135deg, #fff 0%, #f093fb 50%, #667eea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 40px rgba(240, 147, 251, 0.5);
+            transform-style: preserve-3d;
+            animation: titleFloat 3s ease-in-out infinite;
+            letter-spacing: 3px;
+            position: relative;
+        }
+        
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0) rotateX(0deg); }
+            50% { transform: translateY(-10px) rotateX(5deg); }
+        }
+        
+        .page-title-3d::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.3) 0%, rgba(102, 126, 234, 0.3) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: blur(10px);
+            transform: translateZ(-20px);
+        }
+        
+        /* テーブル - ガラス効果 */
+        .table-glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .table-glass thead {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(240, 147, 251, 0.3) 100%);
+        }
+        
+        .table-glass tbody tr {
+            transition: all 0.3s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .table-glass tbody tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px) scale(1.01);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* バッジ - 3D効果 */
+        .badge-3d {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transform-style: preserve-3d;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .badge-3d:hover {
+            transform: translateY(-3px) rotateX(10deg) scale(1.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* アニメーション */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) translateZ(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) translateZ(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        /* スクロールバー */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+        }
+        
+        /* モーダル - 3D効果 */
+        .modal-content {
+            background: rgba(15, 12, 41, 0.95);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 40px rgba(240, 147, 251, 0.2);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(240, 147, 251, 0.3) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px 20px 0 0;
+        }
+        
+        /* レスポンシブ */
+        @media (max-width: 768px) {
+            .page-title-3d {
+                font-size: 2rem;
+            }
+            
+            .card-3d {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- パーティクル背景 -->
+    <div id="particles-js"></div>
+    <div class="grid-background"></div>
+    
     <div class="container-fluid">
         <div class="row">
             <!-- サイドバー -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
                 <div class="position-sticky pt-3">
-                    <div class="text-center mb-4">
-                        <h3 class="text-white">
-                            <i class="fas fa-dumbbell"></i> AI ジム
-                        </h3>
+                    <!-- ブランド -->
+                    <div class="brand mb-4">
+                        <div class="logo-3d">
+                            <i class="fas fa-dumbbell" style="font-size: 3rem; color: #f093fb; text-shadow: 0 0 20px rgba(240, 147, 251, 0.8);"></i>
+                        </div>
+                        <h3>STLINE</h3>
+                        <div class="subtitle">AI Personal Trainer</div>
+                        <hr style="border-color: rgba(255,255,255,0.2); margin: 1rem 0;">
+                        <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">by HIKARU NEJIKANE</small>
                     </div>
+                    
+                    <!-- ナビゲーション -->
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                                <i class="fas fa-chart-dashboard me-2"></i>
+                                <i class="fas fa-chart-line me-2"></i>
                                 ダッシュボード
                             </a>
                         </li>
@@ -91,18 +559,26 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#" onclick="startTrainingSession()">
-                                <i class="fas fa-play me-2"></i>
+                                <i class="fas fa-play-circle me-2"></i>
                                 セッション開始
                             </a>
                         </li>
                     </ul>
+                    
+                    <!-- バージョン情報 -->
+                    <div class="mt-auto pt-3 px-3" style="position: absolute; bottom: 20px; left: 0; right: 0;">
+                        <small style="color: rgba(255,255,255,0.6);">
+                            <i class="fas fa-code-branch"></i> Version 1.0.0<br>
+                            <i class="fas fa-copyright"></i> 2025 STLINE Corp.
+                        </small>
+                    </div>
                 </div>
             </nav>
 
             <!-- メインコンテンツ -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">{% block page_title %}{% endblock %}</h1>
+            <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-4 mb-4">
+                    <h1 class="page-title-3d" data-text="{% block page_title %}{% endblock %}">{% block page_title %}{% endblock %}</h1>
                 </div>
 
                 {% block content %}{% endblock %}
@@ -110,11 +586,72 @@
         </div>
     </div>
 
+    <!-- Particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script>
+        // パーティクル設定
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: '#f093fb' },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5, random: true },
+                size: { value: 3, random: true },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: '#667eea',
+                    opacity: 0.4,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 2,
+                    direction: 'none',
+                    random: true,
+                    straight: false,
+                    out_mode: 'out',
+                    bounce: false
+                }
+            },
+            interactivity: {
+                detect_on: 'canvas',
+                events: {
+                    onhover: { enable: true, mode: 'repulse' },
+                    onclick: { enable: true, mode: 'push' },
+                    resize: true
+                },
+                modes: {
+                    repulse: { distance: 100, duration: 0.4 },
+                    push: { particles_nb: 4 }
+                }
+            },
+            retina_detect: true
+        });
+        
+        // 3Dマウス追従効果
+        document.addEventListener('mousemove', (e) => {
+            const cards = document.querySelectorAll('.card-3d, .stats-card-3d');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 10;
+                const rotateY = (centerX - x) / 10;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(0)`;
+            });
+        });
+        
+        // セッション開始
         function startTrainingSession() {
-            // トレーニングセッション開始モーダルを表示
             const modal = new bootstrap.Modal(document.getElementById('trainingModal') || createTrainingModal());
             modal.show();
         }
@@ -122,23 +659,25 @@
         function createTrainingModal() {
             const modalHtml = `
                 <div class="modal fade" id="trainingModal" tabindex="-1">
-                    <div class="modal-dialog">
+                    <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">トレーニングセッション開始</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                <h5 class="modal-title text-white">
+                                    <i class="fas fa-rocket me-2"></i> トレーニングセッション開始
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
-                            <div class="modal-body">
+                            <div class="modal-body text-white">
                                 <form id="sessionForm">
                                     <div class="mb-3">
-                                        <label for="userId" class="form-label">ユーザー</label>
-                                        <select class="form-select" id="userId" required>
-                                            <option value="">選択してください</option>
+                                        <label for="userId" class="form-label">ユーザー選択</label>
+                                        <select class="form-select bg-dark text-white border-secondary" id="userId" required>
+                                            <option value="">ユーザーを選択してください</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">
                                         <label for="exerciseType" class="form-label">運動種目</label>
-                                        <select class="form-select" id="exerciseType" required>
+                                        <select class="form-select bg-dark text-white border-secondary" id="exerciseType" required>
                                             <option value="">選択してください</option>
                                             <option value="squat">スクワット</option>
                                             <option value="push_up">腕立て伏せ</option>
@@ -148,9 +687,11 @@
                                     </div>
                                 </form>
                             </div>
-                            <div class="modal-footer">
+                            <div class="modal-footer border-secondary">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-                                <button type="button" class="btn btn-primary" onclick="submitSession()">開始</button>
+                                <button type="button" class="btn btn-3d" onclick="submitSession()">
+                                    <i class="fas fa-rocket me-2"></i> 開始
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -171,13 +712,8 @@
 
             fetch('/start_session', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    exercise_type: exerciseType
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId, exercise_type: exerciseType })
             })
             .then(response => response.json())
             .then(data => {
@@ -193,11 +729,15 @@
                 alert('セッション開始に失敗しました。');
             });
         }
-
-        // ページ読み込み時にユーザーリストを取得
+        
+        // ページ読み込み時のアニメーション
         document.addEventListener('DOMContentLoaded', function() {
-            // ここでユーザーリストをAPIから取得してselect要素に追加
-            // 簡略化のためサンプルデータを使用
+            const elements = document.querySelectorAll('.card-3d, .stats-card-3d');
+            elements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.classList.add('animate-fade-in-up');
+                }, index * 100);
+            });
         });
     </script>
     
