@@ -13,6 +13,11 @@ import numpy as np
 from pathlib import Path
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+import logging
+
+# ロガー設定（他のインポートより先に設定）
+logger = logging.getLogger(__name__)
+
 from personal_gym_trainer import PersonalGymTrainer, UserProfile, WorkoutSession
 from posture_analyzer import PostureAnalyzer, PostureAnalysis
 from posture_detector import PostureDetector
@@ -45,10 +50,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'images'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'videos'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'visualizations'), exist_ok=True)  # 可視化画像用ディレクトリ
-
-# ロガー設定
-import logging
-logger = logging.getLogger(__name__)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'pdfs'), exist_ok=True)  # PDF出力用ディレクトリ
 
 def allowed_file(filename):
     """許可されたファイル拡張子かチェック"""
