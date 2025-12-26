@@ -123,13 +123,29 @@ class PostureAnalyzer:
             shoulder_angle = math.degrees(math.atan2(rs.y - ls.y, rs.x - ls.x))
             angles["shoulder_tilt"] = abs(shoulder_angle)
         
-        # 首の角度（前傾・後傾）
+        # 首の角度（前傾・後傾、医学的基準: 0-5度が正常、5度以上で問題）
         if all(k in keypoints for k in ["nose", "left_shoulder", "right_shoulder"]):
-            nose = keypoints["nose"]
+            # 耳の中心を計算（より正確な首の角度のため）
+            le = keypoints.get("left_ear")
+            re = keypoints.get("right_ear")
+            if le and re:
+                ear_center = ((le.x + re.x) / 2, (le.y + re.y) / 2)
+            else:
+                # 耳がない場合は鼻を使用
+                nose = keypoints["nose"]
+                ear_center = (nose.x, nose.y)
+            
             ls = keypoints["left_shoulder"]
             rs = keypoints["right_shoulder"]
-            shoulder_center_y = (ls.y + rs.y) / 2
-            neck_angle = math.degrees(math.atan2(nose.y - shoulder_center_y, abs(nose.x - (ls.x + rs.x) / 2)))
+            shoulder_center = ((ls.x + rs.x) / 2, (ls.y + rs.y) / 2)
+            
+            # 首の角度を計算（垂直線からの角度）
+            # 正の値: 前傾、負の値: 後傾
+            neck_angle = math.degrees(math.atan2(
+                ear_center[1] - shoulder_center[1],
+                abs(ear_center[0] - shoulder_center[0])
+            ))
+            # 正常範囲: 0-5度、問題: 5度以上
             angles["neck_angle"] = neck_angle
         
         # 背骨の角度（猫背・反り腰の検出）
