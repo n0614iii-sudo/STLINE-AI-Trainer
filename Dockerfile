@@ -9,15 +9,9 @@ LABEL version="1.0.0"
 # 作業ディレクトリ
 WORKDIR /app
 
-# システム依存関係のインストール
-RUN apt-get update && apt-get install -y \
+# システム依存関係のインストール（最小限）
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Python依存関係のインストール
@@ -38,10 +32,6 @@ ENV FLASK_ENV=production
 
 # ポート公開
 EXPOSE 5000
-
-# ヘルスチェック
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5000')" || exit 1
 
 # 起動コマンド
 CMD ["python", "gym_dashboard.py"]
