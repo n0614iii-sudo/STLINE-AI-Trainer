@@ -11,8 +11,10 @@ WORKDIR /app
 
 # システム依存関係のインストール（最小限）
 # OpenCV headless版を使用するため、GUI関連のライブラリは不要
+# 日本語フォント（Noto Sans CJK）をインストール
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
 # Python依存関係のインストール

@@ -55,15 +55,19 @@ class PDFGenerator:
     
     def _setup_fonts(self):
         """日本語フォントを設定"""
+        self.japanese_font_name = None
+        
         try:
             # システムフォントを試す
             font_paths = [
+                # Linux (Noto Sans CJK - インストール済み)
+                '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+                '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+                '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.otf',
                 # macOS
                 '/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc',
                 '/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc',
                 '/Library/Fonts/ヒラギノ角ゴシック W3.ttc',
-                # Linux
-                '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
                 # Windows
                 'C:/Windows/Fonts/msgothic.ttc',
                 'C:/Windows/Fonts/msmincho.ttc',
@@ -74,19 +78,36 @@ class PDFGenerator:
                     try:
                         # TTFontで登録を試みる
                         pdfmetrics.registerFont(TTFont('Japanese', font_path))
+                        self.japanese_font_name = 'Japanese'
                         logger.info(f"日本語フォントを登録しました: {font_path}")
                         return
-                    except:
+                    except Exception as e:
+                        logger.debug(f"フォント登録失敗 ({font_path}): {e}")
                         continue
             
             # フォールバック: UnicodeCIDFontを使用
             try:
+                # HeiseiKakuGo-W5 (平成角ゴシック) を試す
                 pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
-                logger.info("UnicodeCIDFontを使用します")
-            except:
-                logger.warning("日本語フォントの登録に失敗しました。デフォルトフォントを使用します。")
+                self.japanese_font_name = 'HeiseiKakuGo-W5'
+                logger.info("UnicodeCIDFont (HeiseiKakuGo-W5) を使用します")
+                return
+            except Exception as e1:
+                logger.debug(f"UnicodeCIDFont (HeiseiKakuGo-W5) の登録に失敗: {e1}")
+                try:
+                    # HeiseiMin-W3 (平成明朝) を試す
+                    pdfmetrics.registerFont(UnicodeCIDFont('HeiseiMin-W3'))
+                    self.japanese_font_name = 'HeiseiMin-W3'
+                    logger.info("UnicodeCIDFont (HeiseiMin-W3) を使用します")
+                    return
+                except Exception as e2:
+                    logger.debug(f"UnicodeCIDFont (HeiseiMin-W3) の登録に失敗: {e2}")
+            
+            logger.warning("日本語フォントの登録に失敗しました。デフォルトフォントを使用します。")
+            self.japanese_font_name = 'Helvetica'
         except Exception as e:
             logger.warning(f"フォント設定エラー: {e}")
+            self.japanese_font_name = 'Helvetica'
     
     def _setup_custom_styles(self):
         """カスタムスタイルを設定"""
@@ -98,7 +119,7 @@ class PDFGenerator:
             textColor=colors.HexColor('#1e40af'),
             spaceAfter=30,
             alignment=TA_CENTER,
-            fontName='Japanese' if 'Japanese' in pdfmetrics.getRegisteredFontNames() else 'Helvetica-Bold'
+            fontName=self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica-Bold'
         )
         
         # 見出しスタイル
@@ -109,7 +130,7 @@ class PDFGenerator:
             textColor=colors.HexColor('#1e40af'),
             spaceAfter=12,
             spaceBefore=12,
-            fontName='Japanese' if 'Japanese' in pdfmetrics.getRegisteredFontNames() else 'Helvetica-Bold'
+            fontName=self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica-Bold'
         )
         
         # 本文スタイル
