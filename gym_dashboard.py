@@ -214,4 +214,6 @@ http://localhost:5000 でアクセスできます
 - セッション管理
 """)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # RailwayではPORT環境変数が自動的に設定される
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
