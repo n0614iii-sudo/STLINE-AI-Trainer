@@ -678,7 +678,7 @@ def analyze_video_posture(video_path, user_id, posture_type):
         
         posture_analyzer.save_analysis(user_id, final_analysis)
         
-        return {
+        result = {
             "status": "success",
             "analysis": {
                 "overall_score": final_analysis.overall_score,
@@ -692,6 +692,11 @@ def analyze_video_posture(video_path, user_id, posture_type):
                 "total_frames": total_frames
             }
         }
+        
+        if 'report_image_url' in locals() and report_image_url:
+            result["report_image_url"] = report_image_url
+        
+        return result
     
     except Exception as e:
         logger.error(f"動画姿勢分析エラー: {e}")
