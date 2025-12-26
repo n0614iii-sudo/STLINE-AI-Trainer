@@ -241,9 +241,14 @@ def api_posture_analyze():
             try:
                 # Base64デコード
                 image_bytes = base64.b64decode(image_data.split(',')[-1])
-                import cv2
-                nparr = np.frombuffer(image_bytes, np.uint8)
-                image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                try:
+                    import cv2
+                    nparr = np.frombuffer(image_bytes, np.uint8)
+                    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                except ImportError:
+                    # opencv-python-headlessがインストールされていない場合
+                    logger.warning("cv2が利用できません。キーポイント検出をスキップします。")
+                    image = None
                 
                 if image is not None:
                     # 姿勢検出器を使用してキーポイントを検出
