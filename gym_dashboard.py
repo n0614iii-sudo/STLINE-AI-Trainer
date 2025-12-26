@@ -596,6 +596,9 @@ def analyze_image_posture(image_path, user_id, posture_type):
         posture_analyzer.save_analysis(user_id, analysis)
         
         # 画像に姿勢評価を可視化
+        visualized_image_url = None
+        report_image_url = None
+        
         try:
             timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             base_filename = os.path.splitext(os.path.basename(image_path))[0]
@@ -603,29 +606,40 @@ def analyze_image_posture(image_path, user_id, posture_type):
             # 可視化ディレクトリを確実に作成
             vis_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations')
             os.makedirs(vis_dir, exist_ok=True)
+            logger.info(f"可視化ディレクトリ: {vis_dir}, 存在: {os.path.exists(vis_dir)}")
             
-            # 通常の可視化画像
-            visualized_image = posture_visualizer.visualize_posture(image, detected_keypoints, analysis)
-            output_filename = f"analyzed_{timestamp}_{base_filename}.png"
-            output_path = os.path.join(vis_dir, output_filename)
-            success1 = cv2.imwrite(output_path, visualized_image)
-            if success1 and os.path.exists(output_path):
-                visualized_image_url = url_for('uploaded_file', filename=f'visualizations/{output_filename}')
-                logger.info(f"可視化画像を保存: {output_path}, URL: {visualized_image_url}")
-            else:
-                logger.error(f"可視化画像の保存に失敗: {output_path}")
+            # 通常の可視化画像（キーポイントと骨格を直接描画）
+            try:
+                visualized_image = posture_visualizer.visualize_posture(image, detected_keypoints, analysis, draw_text=False)
+                output_filename = f"analyzed_{timestamp}_{base_filename}.png"
+                output_path = os.path.join(vis_dir, output_filename)
+                success1 = cv2.imwrite(output_path, visualized_image)
+                if success1 and os.path.exists(output_path):
+                    file_size = os.path.getsize(output_path)
+                    visualized_image_url = url_for('uploaded_file', filename=f'visualizations/{output_filename}')
+                    logger.info(f"可視化画像を保存: {output_path}, サイズ: {file_size} bytes, URL: {visualized_image_url}")
+                else:
+                    logger.error(f"可視化画像の保存に失敗: {output_path}")
+                    visualized_image_url = None
+            except Exception as e:
+                logger.error(f"可視化画像生成エラー: {e}", exc_info=True)
                 visualized_image_url = None
             
             # 診断結果レポート画像（問題点・改善提案を含む）
-            report_image = posture_visualizer.create_diagnosis_report_image(image, detected_keypoints, analysis)
-            report_filename = f"report_{timestamp}_{base_filename}.png"
-            report_path = os.path.join(vis_dir, report_filename)
-            success2 = cv2.imwrite(report_path, report_image)
-            if success2 and os.path.exists(report_path):
-                report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
-                logger.info(f"診断結果レポート画像を保存: {report_path}, URL: {report_image_url}")
-            else:
-                logger.error(f"診断結果レポート画像の保存に失敗: {report_path}")
+            try:
+                report_image = posture_visualizer.create_diagnosis_report_image(image, detected_keypoints, analysis)
+                report_filename = f"report_{timestamp}_{base_filename}.png"
+                report_path = os.path.join(vis_dir, report_filename)
+                success2 = cv2.imwrite(report_path, report_image)
+                if success2 and os.path.exists(report_path):
+                    file_size = os.path.getsize(report_path)
+                    report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+                    logger.info(f"診断結果レポート画像を保存: {report_path}, サイズ: {file_size} bytes, URL: {report_image_url}")
+                else:
+                    logger.error(f"診断結果レポート画像の保存に失敗: {report_path}, success={success2}, exists={os.path.exists(report_path) if report_path else False}")
+                    report_image_url = None
+            except Exception as e:
+                logger.error(f"診断結果レポート画像生成エラー: {e}", exc_info=True)
                 report_image_url = None
             
         except Exception as e:
@@ -633,7 +647,7 @@ def analyze_image_posture(image_path, user_id, posture_type):
             visualized_image_url = None
             report_image_url = None
         
-        return {
+        result = {
             "status": "success",
             "analysis": {
                 "overall_score": analysis.overall_score,
@@ -644,10 +658,18 @@ def analyze_image_posture(image_path, user_id, posture_type):
                 "keypoint_angles": analysis.keypoint_angles,
                 "timestamp": analysis.timestamp.isoformat(),
                 "muscle_assessment": getattr(analysis, 'muscle_assessment', {"tight_muscles": [], "stretch_needed": [], "strengthen_needed": []})
-            },
-            "visualized_image_url": visualized_image_url,
-            "report_image_url": report_image_url if 'report_image_url' in locals() else None
+            }
         }
+        
+        # URLを追加（Noneでも追加）
+        if visualized_image_url:
+            result["visualized_image_url"] = visualized_image_url
+        if report_image_url:
+            result["report_image_url"] = report_image_url
+        
+        logger.info(f"analyze_image_posture結果: visualized_image_url={visualized_image_url}, report_image_url={report_image_url}")
+        
+        return result
     
     except Exception as e:
         logger.error(f"画像姿勢分析エラー: {e}", exc_info=True)
