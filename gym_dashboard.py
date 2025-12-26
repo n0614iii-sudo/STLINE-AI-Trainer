@@ -36,6 +36,7 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'images'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'videos'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'visualizations'), exist_ok=True)  # 可視化画像用ディレクトリ
 
 # ロガー設定
 import logging
@@ -385,14 +386,24 @@ def api_posture_analyze():
                 report_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', report_filename)
                 
                 # ディレクトリが存在するか確認
-                os.makedirs(os.path.dirname(report_path), exist_ok=True)
+                vis_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations')
+                os.makedirs(vis_dir, exist_ok=True)
+                logger.info(f"可視化ディレクトリ: {vis_dir}, 存在: {os.path.exists(vis_dir)}")
                 
                 success = cv2.imwrite(report_path, report_image)
                 if success:
-                    report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
-                    logger.info(f"診断結果レポート画像を保存: {report_path}, URL: {report_image_url}")
+                    # ファイルが実際に保存されたか確認
+                    if os.path.exists(report_path):
+                        file_size = os.path.getsize(report_path)
+                        logger.info(f"診断結果レポート画像を保存: {report_path}, サイズ: {file_size} bytes")
+                        report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+                        logger.info(f"診断結果レポート画像URL: {report_image_url}")
+                    else:
+                        logger.error(f"画像ファイルが保存されませんでした: {report_path}")
+                        report_image_url = None
                 else:
-                    logger.error(f"画像の保存に失敗: {report_path}")
+                    logger.error(f"cv2.imwriteが失敗: {report_path}")
+                    report_image_url = None
             except Exception as e:
                 logger.error(f"診断結果レポート画像生成エラー: {e}", exc_info=True)
         
@@ -691,14 +702,23 @@ def analyze_video_posture(video_path, user_id, posture_type):
                         muscle_assessment=analyses[0].muscle_assessment if analyses and hasattr(analyses[0], 'muscle_assessment') else {"tight_muscles": [], "stretch_needed": [], "strengthen_needed": []}
                     )
                     
+                    # 可視化ディレクトリを確実に作成
+                    vis_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations')
+                    os.makedirs(vis_dir, exist_ok=True)
+                    
                     # 診断結果レポート画像を生成
                     report_image = posture_visualizer.create_diagnosis_report_image(
                         first_frame, first_keypoints, temp_analysis
                     )
                     report_filename = f"report_{timestamp}_{base_filename}.png"
-                    report_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', report_filename)
-                    cv2.imwrite(report_path, report_image)
-                    report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+                    report_path = os.path.join(vis_dir, report_filename)
+                    success = cv2.imwrite(report_path, report_image)
+                    if success and os.path.exists(report_path):
+                        report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+                        logger.info(f"動画診断結果レポート画像を保存: {report_path}, URL: {report_image_url}")
+                    else:
+                        logger.error(f"動画診断結果レポート画像の保存に失敗: {report_path}")
+                        report_image_url = None
             except Exception as e:
                 logger.warning(f"動画診断結果レポート画像生成エラー: {e}")
         
