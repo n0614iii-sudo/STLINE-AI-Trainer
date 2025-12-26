@@ -19,6 +19,7 @@ from posture_detector import PostureDetector
 from posture_visualizer import PostureVisualizer
 from posture_type_detector import PostureTypeDetector
 from pdf_generator import PDFGenerator
+from pdf_generator import PDFGenerator
 
 # 環境変数を読み込み
 load_dotenv()
@@ -901,6 +902,75 @@ def uploaded_file(filename):
         logger.error(f"ファイル提供エラー: {e}", exc_info=True)
         return f"Error: {str(e)}", 500
 
+@app.route('/api/posture/pdf/<user_id>', methods=['POST'])
+def api_generate_pdf(user_id):
+    """診断結果をPDF形式で生成"""
+    try:
+        data = request.json
+        analysis = data.get('analysis')
+        
+        if not analysis:
+            return jsonify({"status": "error", "message": "分析結果が必要です"}), 400
+        
+        # ユーザー名を取得
+        user_name = data.get('user_name', None)
+        
+        # 画像パスを取得
+        report_image_url = data.get('report_image_url', None)
+        xray_image_url = data.get('xray_image_url', None)
+        visualized_image_url = data.get('visualized_image_url', None)
+        
+        # URLからパスを取得
+        report_image_path = None
+        xray_image_path = None
+        visualized_image_path = None
+        
+        if report_image_url:
+            # URLからパスを抽出（例: /uploads/visualizations/report_xxx.png）
+            if report_image_url.startswith('/uploads/'):
+                report_image_path = os.path.join(app.config['UPLOAD_FOLDER'], report_image_url.replace('/uploads/', ''))
+        
+        if xray_image_url:
+            if xray_image_url.startswith('/uploads/'):
+                xray_image_path = os.path.join(app.config['UPLOAD_FOLDER'], xray_image_url.replace('/uploads/', ''))
+        
+        if visualized_image_url:
+            if visualized_image_url.startswith('/uploads/'):
+                visualized_image_path = os.path.join(app.config['UPLOAD_FOLDER'], visualized_image_url.replace('/uploads/', ''))
+        
+        # PDFファイル名を生成
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        pdf_filename = f"posture_report_{user_id}_{timestamp}.pdf"
+        pdf_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'pdfs')
+        os.makedirs(pdf_dir, exist_ok=True)
+        pdf_path = os.path.join(pdf_dir, pdf_filename)
+        
+        # PDFを生成
+        success = pdf_generator.generate_diagnosis_pdf(
+            output_path=pdf_path,
+            analysis=analysis,
+            user_id=user_id,
+            user_name=user_name,
+            report_image_path=report_image_path,
+            xray_image_path=xray_image_path,
+            visualized_image_path=visualized_image_path
+        )
+        
+        if success and os.path.exists(pdf_path):
+            pdf_url = url_for('uploaded_file', filename=f'pdfs/{pdf_filename}')
+            logger.info(f"PDFを生成しました: {pdf_path}, URL: {pdf_url}")
+            return jsonify({
+                "status": "success",
+                "pdf_url": pdf_url,
+                "message": "PDFを生成しました"
+            })
+        else:
+            logger.error(f"PDF生成に失敗しました: {pdf_path}")
+            return jsonify({"status": "error", "message": "PDF生成に失敗しました"}), 500
+    
+    except Exception as e:
+        logger.error(f"PDF生成APIエラー: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/stats')
 def api_stats():

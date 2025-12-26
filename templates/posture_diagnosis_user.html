@@ -411,6 +411,7 @@
                 console.log('診断結果レポート画像URL:', data.report_image_url);
                 console.log('可視化画像URL:', data.visualized_image_url);
                 console.log('X線透視風画像URL:', data.xray_image_url);
+                // xrayImageUrlも渡すように修正
                 displayAnalysisResult(data.analysis, data.visualized_image_url, data.report_image_url, data.xray_image_url);
             } else if (data.status === 'error') {
                 console.error('姿勢分析エラー:', data.message);
@@ -502,6 +503,17 @@
                 <button onclick="generatePDF(${JSON.stringify(analysis).replace(/"/g, '&quot;')}, '${reportImageUrl || ''}', '${xrayImageUrl || ''}', '${visualizedImageUrl || ''}')" 
                         class="btn btn-3d btn-lg" 
                         style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 15px 30px; font-size: 18px;">
+                    <i class="fas fa-file-pdf me-2"></i> 診断結果をPDFでダウンロード
+                </button>
+            </div>
+        `;
+        
+        // PDFダウンロードボタンを追加
+        html += `
+            <div class="mb-4 text-center">
+                <button onclick="generatePDF(${JSON.stringify(analysis).replace(/"/g, '&quot;')}, '${reportImageUrl || ''}', '${xrayImageUrl || ''}', '${visualizedImageUrl || ''}')" 
+                        class="btn btn-3d btn-lg" 
+                        style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
                     <i class="fas fa-file-pdf me-2"></i> 診断結果をPDFでダウンロード
                 </button>
             </div>
