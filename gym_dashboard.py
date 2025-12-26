@@ -967,31 +967,29 @@ def api_generate_pdf(user_id):
         os.makedirs(pdf_dir, exist_ok=True)
         pdf_path = os.path.join(pdf_dir, pdf_filename)
         
-        # analysisをPostureAnalysisオブジェクトに変換（辞書形式の場合）
-        if isinstance(analysis, dict):
-            try:
-                from datetime import datetime as dt
-                analysis_obj = PostureAnalysis(
-                    timestamp=dt.fromisoformat(analysis.get('timestamp', datetime.datetime.now().isoformat())),
-                    posture_type=analysis.get('posture_type', 'standing_front'),
-                    overall_score=analysis.get('overall_score', 0.0),
-                    issues=analysis.get('issues', []),
-                    recommendations=analysis.get('recommendations', []),
-                    keypoint_angles=analysis.get('keypoint_angles', {}),
-                    alignment_scores=analysis.get('alignment_scores', {}),
-                    detailed_metrics=analysis.get('detailed_metrics', {}),
-                    muscle_assessment=analysis.get('muscle_assessment', {})
-                )
-            except Exception as e:
-                logger.error(f"PostureAnalysisオブジェクトへの変換エラー: {e}")
-                return jsonify({"status": "error", "message": f"分析データの変換に失敗しました: {str(e)}"}), 400
+        # analysisを辞書形式に変換（PostureAnalysisオブジェクトの場合）
+        if hasattr(analysis, '__dict__'):
+            analysis_dict = analysis.__dict__.copy()
+            # datetimeオブジェクトを文字列に変換
+            if 'timestamp' in analysis_dict and hasattr(analysis_dict['timestamp'], 'isoformat'):
+                analysis_dict['timestamp'] = analysis_dict['timestamp'].isoformat()
+        elif isinstance(analysis, dict):
+            analysis_dict = analysis.copy()
+            # timestampが文字列でない場合は変換
+            if 'timestamp' in analysis_dict and not isinstance(analysis_dict['timestamp'], str):
+                if hasattr(analysis_dict['timestamp'], 'isoformat'):
+                    analysis_dict['timestamp'] = analysis_dict['timestamp'].isoformat()
+                else:
+                    analysis_dict['timestamp'] = datetime.datetime.now().isoformat()
         else:
-            analysis_obj = analysis
+            logger.error(f"予期しないanalysisの型: {type(analysis)}")
+            return jsonify({"status": "error", "message": "分析データの形式が不正です"}), 400
         
         # PDFを生成
+        logger.info(f"PDF生成を開始: user_id={user_id}, pdf_path={pdf_path}")
         success = pdf_generator.generate_diagnosis_pdf(
             output_path=pdf_path,
-            analysis=analysis_obj.__dict__ if hasattr(analysis_obj, '__dict__') else analysis,
+            analysis=analysis_dict,
             user_id=user_id,
             user_name=user_name,
             report_image_path=report_image_path,
