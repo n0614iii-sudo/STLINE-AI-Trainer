@@ -353,6 +353,19 @@ def api_posture_analyze():
         # 結果を保存
         posture_analyzer.save_analysis(user_id, analysis)
         
+        # 画像が提供されている場合、診断結果レポート画像を生成
+        report_image_url = None
+        if image is not None:
+            try:
+                timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                report_image = posture_visualizer.create_diagnosis_report_image(image, keypoints, analysis)
+                report_filename = f"report_{user_id}_{timestamp}.png"
+                report_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', report_filename)
+                cv2.imwrite(report_path, report_image)
+                report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+            except Exception as e:
+                logger.warning(f"診断結果レポート画像生成エラー: {e}")
+        
         # レスポンスを準備
         response = {
             "status": "success",
@@ -366,6 +379,9 @@ def api_posture_analyze():
                 "timestamp": analysis.timestamp.isoformat()
             }
         }
+        
+        if report_image_url:
+            response["report_image_url"] = report_image_url
         
         return jsonify(response)
     
@@ -448,12 +464,17 @@ def api_posture_upload():
             result = analyze_image_posture(filepath, user_id, posture_type)
         
         if result['status'] == 'success':
-            return jsonify({
+            response_data = {
                 "status": "success",
                 "message": "姿勢分析が完了しました",
                 "file_url": f"/uploads/{'videos' if is_video_file(filename) else 'images'}/{safe_filename}",
                 "analysis": result.get('analysis')
-            })
+            }
+            if 'report_image_url' in result:
+                response_data['report_image_url'] = result['report_image_url']
+            if 'visualized_image_url' in result:
+                response_data['visualized_image_url'] = result['visualized_image_url']
+            return jsonify(response_data)
         else:
             return jsonify(result), 500
     
@@ -494,16 +515,27 @@ def analyze_image_posture(image_path, user_id, posture_type):
         
         # 画像に姿勢評価を可視化
         try:
-            visualized_image = posture_visualizer.visualize_posture(image, detected_keypoints, analysis)
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            base_filename = os.path.splitext(os.path.basename(image_path))[0]
             
-            # 可視化された画像を保存
-            output_filename = f"analyzed_{timestamp}_{filename}"
-            output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', output_filename)
+            # 通常の可視化画像
+            visualized_image = posture_visualizer.visualize_posture(image, detected_keypoints, analysis)
+            output_filename = f"analyzed_{timestamp}_{base_filename}.png"
+            output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', output_filename)
             cv2.imwrite(output_path, visualized_image)
-            visualized_image_url = f"/uploads/images/{output_filename}"
+            visualized_image_url = url_for('uploaded_file', filename=f'visualizations/{output_filename}')
+            
+            # 診断結果レポート画像（問題点・改善提案を含む）
+            report_image = posture_visualizer.create_diagnosis_report_image(image, detected_keypoints, analysis)
+            report_filename = f"report_{timestamp}_{base_filename}.png"
+            report_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', report_filename)
+            cv2.imwrite(report_path, report_image)
+            report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+            
         except Exception as e:
             logger.warning(f"画像可視化エラー: {e}")
             visualized_image_url = None
+            report_image_url = None
         
         return {
             "status": "success",
@@ -516,7 +548,8 @@ def analyze_image_posture(image_path, user_id, posture_type):
                 "keypoint_angles": analysis.keypoint_angles,
                 "timestamp": analysis.timestamp.isoformat()
             },
-            "visualized_image_url": visualized_image_url
+            "visualized_image_url": visualized_image_url,
+            "report_image_url": report_image_url if 'report_image_url' in locals() else None
         }
     
     except Exception as e:
@@ -595,6 +628,41 @@ def analyze_video_posture(video_path, user_id, posture_type):
         for a in analyses:
             all_recommendations.extend(a.recommendations)
         unique_recommendations = list(dict.fromkeys(all_recommendations))
+        
+        # 最初のフレームを取得してレポート画像を生成
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        ret, first_frame = cap.read()
+        report_image_url = None
+        
+        if ret and first_frame is not None:
+            try:
+                # 最初のフレームからキーポイントを再検出
+                first_keypoints = detector.detect_keypoints(first_frame)
+                if first_keypoints:
+                    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                    base_filename = os.path.splitext(os.path.basename(video_path))[0]
+                    
+                    # 最終分析結果を作成（一時的に）
+                    temp_analysis = PostureAnalysis(
+                        timestamp=datetime.datetime.now(),
+                        overall_score=avg_score,
+                        posture_type=posture_type,
+                        issues=list(unique_issues.values()),
+                        recommendations=unique_recommendations,
+                        alignment_scores=analyses[0].alignment_scores if analyses else {},
+                        keypoint_angles=analyses[0].keypoint_angles if analyses else {}
+                    )
+                    
+                    # 診断結果レポート画像を生成
+                    report_image = posture_visualizer.create_diagnosis_report_image(
+                        first_frame, first_keypoints, temp_analysis
+                    )
+                    report_filename = f"report_{timestamp}_{base_filename}.png"
+                    report_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', report_filename)
+                    cv2.imwrite(report_path, report_image)
+                    report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+            except Exception as e:
+                logger.warning(f"動画診断結果レポート画像生成エラー: {e}")
         
         # 最終分析結果を作成
         final_analysis = PostureAnalysis(

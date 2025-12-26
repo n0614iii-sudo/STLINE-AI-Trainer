@@ -391,7 +391,7 @@
             const data = await response.json();
             
             if (data.status === 'success' && showResult) {
-                displayAnalysisResult(data.analysis);
+                displayAnalysisResult(data.analysis, data.visualized_image_url, data.report_image_url);
             } else if (data.status === 'error') {
                 console.error('姿勢分析エラー:', data.message);
                 alert('姿勢分析に失敗しました: ' + data.message);
@@ -403,7 +403,7 @@
     }
     
     // 分析結果を表示
-    function displayAnalysisResult(analysis, visualizedImageUrl = null) {
+    function displayAnalysisResult(analysis, visualizedImageUrl = null, reportImageUrl = null) {
         const resultCard = document.getElementById('resultCard');
         const resultContent = document.getElementById('resultContent');
         
@@ -416,8 +416,34 @@
             </div>
         `;
         
-        // 可視化された画像を表示
-        if (visualizedImageUrl) {
+        // 診断結果レポート画像を優先表示（問題点・改善提案を含む）
+        if (reportImageUrl) {
+            html += `
+                <div class="mb-4">
+                    <h6 class="mb-3"><i class="fas fa-file-image me-2"></i> 診断結果レポート画像</h6>
+                    <div class="text-center">
+                        <img src="${reportImageUrl}" alt="診断結果レポート" class="img-fluid rounded" style="max-width: 100%; border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                        <div class="mt-3">
+                            <a href="${reportImageUrl}" download class="btn btn-3d btn-lg" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                <i class="fas fa-download me-2"></i> 診断結果レポートをダウンロード
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 rounded" style="background: rgba(20, 20, 30, 0.8); border: 1px solid rgba(100, 150, 255, 0.3);">
+                        <small class="text-white">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>診断結果レポート画像について:</strong><br>
+                            • 元の画像に姿勢評価、キーポイント、骨格構造を描画<br>
+                            • 検出された問題点と改善提案を含む完全なレポート<br>
+                            • 濃い背景で見やすく表示されています
+                        </small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 可視化された画像を表示（レポート画像がない場合）
+        if (visualizedImageUrl && !reportImageUrl) {
             html += `
                 <div class="mb-4">
                     <h6 class="mb-3"><i class="fas fa-image me-2"></i> 姿勢分析結果画像</h6>
@@ -644,7 +670,7 @@
                         // 分析結果を表示
                         if (response.analysis) {
                             setTimeout(() => {
-                                displayAnalysisResult(response.analysis, response.visualized_image_url);
+                                displayAnalysisResult(response.analysis, response.visualized_image_url, response.report_image_url);
                                 if (uploadProgress) uploadProgress.style.display = 'none';
                                 if (uploadStatus) uploadStatus.textContent = '完了！';
                             }, 500);

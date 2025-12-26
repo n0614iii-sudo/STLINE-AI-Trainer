@@ -86,6 +86,196 @@ class PostureVisualizer:
         
         return vis_image
     
+    def create_diagnosis_report_image(
+        self,
+        image: np.ndarray,
+        keypoints: Dict[str, Tuple[float, float, float]],
+        analysis: PostureAnalysis
+    ) -> np.ndarray:
+        """
+        診断結果レポート画像を生成（問題点・改善提案を含む）
+        
+        Args:
+            image: 入力画像（BGR形式）
+            keypoints: キーポイント辞書 {name: (x, y, confidence)}
+            analysis: 姿勢分析結果
+        
+        Returns:
+            診断結果レポート画像（濃い背景、見やすいテキスト）
+        """
+        h, w = image.shape[:2]
+        
+        # 元の画像に姿勢評価を可視化
+        analyzed_image = self.visualize_posture(image, keypoints, analysis)
+        
+        # 診断結果パネルの高さを計算（問題点と改善提案を含む）
+        panel_height = 400
+        if analysis.issues:
+            panel_height += len(analysis.issues) * 50
+        if analysis.recommendations:
+            panel_height += len(analysis.recommendations) * 40
+        
+        # 新しい画像を作成（元の画像 + 診断結果パネル）
+        report_image = np.zeros((h + panel_height, w, 3), dtype=np.uint8)
+        
+        # 元の画像をコピー
+        report_image[:h, :w] = analyzed_image
+        
+        # 診断結果パネルを描画（濃い背景）
+        panel_y = h
+        cv2.rectangle(report_image, (0, panel_y), (w, h + panel_height), (20, 20, 30), -1)
+        cv2.rectangle(report_image, (0, panel_y), (w, h + panel_height), (60, 60, 80), 2)
+        
+        y_offset = panel_y + 30
+        x_offset = 30
+        
+        # タイトル
+        title_text = "姿勢診断結果レポート"
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale_title = 1.2
+        thickness_title = 3
+        (title_width, title_height), _ = cv2.getTextSize(title_text, font, font_scale_title, thickness_title)
+        
+        # タイトルの背景
+        cv2.rectangle(report_image,
+                     (x_offset - 10, y_offset - title_height - 10),
+                     (x_offset + title_width + 10, y_offset + 10),
+                     (40, 40, 60), -1)
+        cv2.rectangle(report_image,
+                     (x_offset - 10, y_offset - title_height - 10),
+                     (x_offset + title_width + 10, y_offset + 10),
+                     (100, 150, 255), 2)
+        
+        cv2.putText(report_image, title_text, (x_offset, y_offset), 
+                   font, font_scale_title, (255, 255, 255), thickness_title)
+        y_offset += title_height + 40
+        
+        # 総合スコア
+        score_text = f"総合スコア: {int(analysis.overall_score * 100)}/100"
+        score_color = self._get_score_color(analysis.overall_score)
+        font_scale_score = 1.0
+        thickness_score = 3
+        (score_width, score_height), baseline = cv2.getTextSize(score_text, font, font_scale_score, thickness_score)
+        
+        # スコアの背景
+        cv2.rectangle(report_image,
+                     (x_offset - 10, y_offset - score_height - 10),
+                     (x_offset + score_width + 10, y_offset + baseline + 10),
+                     (30, 30, 40), -1)
+        cv2.rectangle(report_image,
+                     (x_offset - 10, y_offset - score_height - 10),
+                     (x_offset + score_width + 10, y_offset + baseline + 10),
+                     score_color, 2)
+        
+        cv2.putText(report_image, score_text, (x_offset, y_offset), 
+                   font, font_scale_score, score_color, thickness_score)
+        y_offset += score_height + 40
+        
+        # 検出された問題
+        if analysis.issues:
+            issues_title = "検出された問題"
+            font_scale_issues_title = 0.9
+            thickness_issues_title = 2
+            (issues_title_width, issues_title_height), _ = cv2.getTextSize(issues_title, font, font_scale_issues_title, thickness_issues_title)
+            
+            # タイトルの背景
+            cv2.rectangle(report_image,
+                         (x_offset - 5, y_offset - issues_title_height - 5),
+                         (x_offset + issues_title_width + 5, y_offset + 5),
+                         (60, 30, 30), -1)
+            cv2.rectangle(report_image,
+                         (x_offset - 5, y_offset - issues_title_height - 5),
+                         (x_offset + issues_title_width + 5, y_offset + 5),
+                         (255, 100, 100), 2)
+            
+            cv2.putText(report_image, issues_title, (x_offset, y_offset), 
+                       font, font_scale_issues_title, (255, 200, 200), thickness_issues_title)
+            y_offset += issues_title_height + 25
+            
+            for issue in analysis.issues:
+                # 深刻度バッジ
+                severity_text = issue["severity"].upper()
+                severity_color = self._get_severity_color(issue["severity"])
+                font_scale_severity = 0.6
+                thickness_severity = 2
+                (severity_width, severity_height), _ = cv2.getTextSize(severity_text, font, font_scale_severity, thickness_severity)
+                
+                # バッジの背景
+                badge_x = x_offset
+                badge_y = y_offset
+                cv2.rectangle(report_image,
+                             (badge_x - 5, badge_y - severity_height - 5),
+                             (badge_x + severity_width + 5, badge_y + 5),
+                             (int(severity_color[0] * 0.3), int(severity_color[1] * 0.3), int(severity_color[2] * 0.3)), -1)
+                cv2.rectangle(report_image,
+                             (badge_x - 5, badge_y - severity_height - 5),
+                             (badge_x + severity_width + 5, badge_y + 5),
+                             severity_color, 2)
+                
+                cv2.putText(report_image, severity_text, (badge_x, badge_y), 
+                           font, font_scale_severity, severity_color, thickness_severity)
+                
+                # 問題の説明
+                desc_x = badge_x + severity_width + 20
+                desc_text = issue["description"]
+                font_scale_desc = 0.7
+                thickness_desc = 2
+                cv2.putText(report_image, desc_text, (desc_x, badge_y), 
+                           font, font_scale_desc, (255, 255, 255), thickness_desc)
+                y_offset += severity_height + 15
+                
+                # 影響の説明
+                if "impact" in issue:
+                    impact_text = f"  → {issue['impact']}"
+                    font_scale_impact = 0.6
+                    thickness_impact = 1
+                    cv2.putText(report_image, impact_text, (desc_x, y_offset), 
+                               font, font_scale_impact, (200, 200, 200), thickness_impact)
+                    y_offset += 25
+                else:
+                    y_offset += 10
+        
+        y_offset += 20
+        
+        # 改善提案
+        if analysis.recommendations:
+            rec_title = "改善提案"
+            font_scale_rec_title = 0.9
+            thickness_rec_title = 2
+            (rec_title_width, rec_title_height), _ = cv2.getTextSize(rec_title, font, font_scale_rec_title, thickness_rec_title)
+            
+            # タイトルの背景
+            cv2.rectangle(report_image,
+                         (x_offset - 5, y_offset - rec_title_height - 5),
+                         (x_offset + rec_title_width + 5, y_offset + 5),
+                         (30, 60, 30), -1)
+            cv2.rectangle(report_image,
+                         (x_offset - 5, y_offset - rec_title_height - 5),
+                         (x_offset + rec_title_width + 5, y_offset + 5),
+                         (100, 255, 100), 2)
+            
+            cv2.putText(report_image, rec_title, (x_offset, y_offset), 
+                       font, font_scale_rec_title, (200, 255, 200), thickness_rec_title)
+            y_offset += rec_title_height + 25
+            
+            for i, rec in enumerate(analysis.recommendations):
+                rec_text = f"  • {rec}"
+                font_scale_rec = 0.65
+                thickness_rec = 2
+                
+                # テキストの背景
+                (rec_width, rec_height), baseline = cv2.getTextSize(rec_text, font, font_scale_rec, thickness_rec)
+                cv2.rectangle(report_image,
+                             (x_offset - 3, y_offset - rec_height - 3),
+                             (x_offset + rec_width + 3, y_offset + baseline + 3),
+                             (25, 40, 25), -1)
+                
+                cv2.putText(report_image, rec_text, (x_offset, y_offset), 
+                           font, font_scale_rec, (200, 255, 200), thickness_rec)
+                y_offset += rec_height + 20
+        
+        return report_image
+    
     def _normalize_keypoints(self, keypoints: Dict[str, Tuple[float, float, float]]) -> Dict[str, PostureKeypoint]:
         """キーポイントを正規化"""
         normalized = {}
@@ -332,8 +522,6 @@ class PostureVisualizer:
                 cv2.putText(image, text, (x_right, y_right), 
                            font, font_scale_issue, severity_color, thickness_issue)
                 y_right += 28
-        
-        return image
         
         return image
     
