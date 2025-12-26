@@ -547,7 +547,8 @@ def analyze_image_posture(image_path, user_id, posture_type):
                 "recommendations": analysis.recommendations,
                 "alignment_scores": analysis.alignment_scores,
                 "keypoint_angles": analysis.keypoint_angles,
-                "timestamp": analysis.timestamp.isoformat()
+                "timestamp": analysis.timestamp.isoformat(),
+                "muscle_assessment": getattr(analysis, 'muscle_assessment', {"tight_muscles": [], "stretch_needed": [], "strengthen_needed": []})
             },
             "visualized_image_url": visualized_image_url,
             "report_image_url": report_image_url if 'report_image_url' in locals() else None
