@@ -355,16 +355,38 @@ def api_posture_analyze():
         
         # 画像が提供されている場合、診断結果レポート画像を生成
         report_image_url = None
+        visualized_image_url = None
         if image is not None:
             try:
                 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+                
+                # 通常の可視化画像も生成
+                try:
+                    visualized_image = posture_visualizer.visualize_posture(image, keypoints, analysis)
+                    vis_filename = f"analyzed_{user_id}_{timestamp}.png"
+                    vis_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', vis_filename)
+                    cv2.imwrite(vis_path, visualized_image)
+                    visualized_image_url = url_for('uploaded_file', filename=f'visualizations/{vis_filename}')
+                    logger.info(f"可視化画像を保存: {vis_path}")
+                except Exception as e:
+                    logger.warning(f"可視化画像生成エラー: {e}")
+                
+                # 診断結果レポート画像を生成
                 report_image = posture_visualizer.create_diagnosis_report_image(image, keypoints, analysis)
                 report_filename = f"report_{user_id}_{timestamp}.png"
                 report_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', report_filename)
-                cv2.imwrite(report_path, report_image)
-                report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+                
+                # ディレクトリが存在するか確認
+                os.makedirs(os.path.dirname(report_path), exist_ok=True)
+                
+                success = cv2.imwrite(report_path, report_image)
+                if success:
+                    report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+                    logger.info(f"診断結果レポート画像を保存: {report_path}, URL: {report_image_url}")
+                else:
+                    logger.error(f"画像の保存に失敗: {report_path}")
             except Exception as e:
-                logger.warning(f"診断結果レポート画像生成エラー: {e}")
+                logger.error(f"診断結果レポート画像生成エラー: {e}", exc_info=True)
         
         # レスポンスを準備
         response = {
@@ -383,6 +405,10 @@ def api_posture_analyze():
         
         if report_image_url:
             response["report_image_url"] = report_image_url
+        if visualized_image_url:
+            response["visualized_image_url"] = visualized_image_url
+        
+        logger.info(f"姿勢分析レスポンス: report_image_url={report_image_url}, visualized_image_url={visualized_image_url}")
         
         return jsonify(response)
     
