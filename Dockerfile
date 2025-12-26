@@ -17,11 +17,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Python依存関係のインストール
 # torchとtorchvisionをCPU版でインストール（サイズ削減）
-# requirements.txtからtorchとtorchvisionを除外したバージョンを使用
+# opencv-python-headlessを先にインストールして、opencv-pythonがインストールされないようにする
 COPY requirements.txt requirements-railway.txt* ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
-    (pip install --no-cache-dir -r requirements-railway.txt 2>/dev/null || pip install --no-cache-dir -r requirements.txt)
+    pip install --no-cache-dir opencv-python-headless>=4.8.0 && \
+    (pip install --no-cache-dir -r requirements-railway.txt 2>/dev/null || pip install --no-cache-dir -r requirements.txt) && \
+    pip uninstall -y opencv-python 2>/dev/null || true
 
 # アプリケーションコードのコピー
 COPY . .
