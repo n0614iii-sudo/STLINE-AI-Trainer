@@ -71,6 +71,9 @@ posture_visualizer = PostureVisualizer()
 # 姿勢タイプ自動判定器インスタンス
 posture_type_detector = PostureTypeDetector()
 
+# PDF生成器インスタンス
+pdf_generator = PDFGenerator()
+
 def get_posture_detector():
     """姿勢検出器を取得（遅延初期化）"""
     global posture_detector
