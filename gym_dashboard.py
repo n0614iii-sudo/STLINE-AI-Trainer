@@ -564,22 +564,36 @@ def analyze_image_posture(image_path, user_id, posture_type):
             timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             base_filename = os.path.splitext(os.path.basename(image_path))[0]
             
+            # 可視化ディレクトリを確実に作成
+            vis_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations')
+            os.makedirs(vis_dir, exist_ok=True)
+            
             # 通常の可視化画像
             visualized_image = posture_visualizer.visualize_posture(image, detected_keypoints, analysis)
             output_filename = f"analyzed_{timestamp}_{base_filename}.png"
-            output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', output_filename)
-            cv2.imwrite(output_path, visualized_image)
-            visualized_image_url = url_for('uploaded_file', filename=f'visualizations/{output_filename}')
+            output_path = os.path.join(vis_dir, output_filename)
+            success1 = cv2.imwrite(output_path, visualized_image)
+            if success1 and os.path.exists(output_path):
+                visualized_image_url = url_for('uploaded_file', filename=f'visualizations/{output_filename}')
+                logger.info(f"可視化画像を保存: {output_path}, URL: {visualized_image_url}")
+            else:
+                logger.error(f"可視化画像の保存に失敗: {output_path}")
+                visualized_image_url = None
             
             # 診断結果レポート画像（問題点・改善提案を含む）
             report_image = posture_visualizer.create_diagnosis_report_image(image, detected_keypoints, analysis)
             report_filename = f"report_{timestamp}_{base_filename}.png"
-            report_path = os.path.join(app.config['UPLOAD_FOLDER'], 'visualizations', report_filename)
-            cv2.imwrite(report_path, report_image)
-            report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+            report_path = os.path.join(vis_dir, report_filename)
+            success2 = cv2.imwrite(report_path, report_image)
+            if success2 and os.path.exists(report_path):
+                report_image_url = url_for('uploaded_file', filename=f'visualizations/{report_filename}')
+                logger.info(f"診断結果レポート画像を保存: {report_path}, URL: {report_image_url}")
+            else:
+                logger.error(f"診断結果レポート画像の保存に失敗: {report_path}")
+                report_image_url = None
             
         except Exception as e:
-            logger.warning(f"画像可視化エラー: {e}")
+            logger.error(f"画像可視化エラー: {e}", exc_info=True)
             visualized_image_url = None
             report_image_url = None
         
