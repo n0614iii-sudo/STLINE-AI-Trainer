@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}運動メニュー - パーソナルジム AI{% endblock %}
+{% block page_title %}運動メニュー{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <p class="lead">AIトレーナーが対応している運動メニューの詳細情報です。各運動のポイントと注意事項を確認してください。</p>
+</div>
+
+<div class="row">
+    {% for exercise_id, exercise in exercises.items() %}
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-{{ 'running' if 'squat' in exercise_id else 'dumbbell' if 'lift' in exercise_id else 'hand-paper' if 'push' in exercise_id else 'grip-horizontal' }}"></i>
+                    {{ exercise.name }}
+                </h5>
+                <span class="badge bg-primary">
+                    {% if 'calories_per_rep' in exercise %}
+                        {{ exercise.calories_per_rep }}kcal/回
+                    {% elif 'calories_per_second' in exercise %}
+                        {{ exercise.calories_per_second }}kcal/秒
+                    {% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <!-- 対象筋肉 -->
+                <div class="mb-3">
+                    <h6 class="text-primary">
+                        <i class="fas fa-muscle"></i> 対象筋肉
+                    </h6>
+                    {% for muscle in exercise.target_muscles %}
+                        <span class="badge bg-info me-1">{{ muscle }}</span>
+                    {% endfor %}
+                </div>
+
+                <!-- フォームチェックポイント -->
+                <div class="mb-3">
+                    <h6 class="text-success">
+                        <i class="fas fa-check-circle"></i> 正しいフォームのポイント
+                    </h6>
+                    <ul class="list-unstyled">
+                        {% for checkpoint in exercise.form_checkpoints %}
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            {{ checkpoint }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- よくある間違い -->
+                <div class="mb-3">
+                    <h6 class="text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> よくある間違い
+                    </h6>
+                    <ul class="list-unstyled">
+                        {% for mistake in exercise.common_mistakes %}
+                        <li class="mb-2">
+                            <i class="fas fa-times text-warning me-2"></i>
+                            {{ mistake }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- レベル別推奨 -->
+                <div class="mb-3">
+                    <h6 class="text-info">
+                        <i class="fas fa-layer-group"></i> レベル別推奨
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <strong class="text-success">初心者</strong><br>
+                                <small>
+                                    {% if exercise_id == 'squat' %}
+                                        8-12回×2セット
+                                    {% elif exercise_id == 'push_up' %}
+                                        5-8回×2セット
+                                    {% elif exercise_id == 'deadlift' %}
+                                        6-10回×2セット
+                                    {% elif exercise_id == 'plank' %}
+                                        20-30秒×2セット
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <strong class="text-warning">中級者</strong><br>
+                                <small>
+                                    {% if exercise_id == 'squat' %}
+                                        12-15回×3セット
+                                    {% elif exercise_id == 'push_up' %}
+                                        10-15回×3セット
+                                    {% elif exercise_id == 'deadlift' %}
+                                        10-12回×3セット
+                                    {% elif exercise_id == 'plank' %}
+                                        45-60秒×3セット
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border rounded p-2">
+                                <strong class="text-danger">上級者</strong><br>
+                                <small>
+                                    {% if exercise_id == 'squat' %}
+                                        15-20回×4セット
+                                    {% elif exercise_id == 'push_up' %}
+                                        15-25回×4セット
+                                    {% elif exercise_id == 'deadlift' %}
+                                        12-15回×4セット
+                                    {% elif exercise_id == 'plank' %}
+                                        60-90秒×3セット
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary w-100" onclick="startExerciseSession('{{ exercise_id }}')">
+                    <i class="fas fa-play"></i> この運動でセッション開始
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 運動のコツとヒント -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> トレーニングの基本原則
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">安全第一</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-shield-alt text-primary me-2"></i>正しいフォームを最優先</li>
+                            <li><i class="fas fa-shield-alt text-primary me-2"></i>痛みを感じたらすぐに停止</li>
+                            <li><i class="fas fa-shield-alt text-primary me-2"></i>十分なウォームアップを実施</li>
+                        </ul>
+                        
+                        <h6 class="text-success mt-4">継続のコツ</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-calendar-check text-success me-2"></i>週3回の定期的なトレーニング</li>
+                            <li><i class="fas fa-calendar-check text-success me-2"></i>徐々に負荷を上げる</li>
+                            <li><i class="fas fa-calendar-check text-success me-2"></i>休息日も大切にする</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning">効果を高める方法</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-clock text-warning me-2"></i>適切なテンポで実施</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>呼吸を意識する</li>
+                            <li><i class="fas fa-clock text-warning me-2"></i>全可動域を使う</li>
+                        </ul>
+                        
+                        <h6 class="text-info mt-4">AIトレーナーの活用</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-robot text-info me-2"></i>リアルタイムフォーム分析</li>
+                            <li><i class="fas fa-robot text-info me-2"></i>即座のフィードバック</li>
+                            <li><i class="fas fa-robot text-info me-2"></i>進捗の自動記録</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 運動選択モーダル -->
+<div class="modal fade" id="exerciseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exerciseModalTitle">セッション開始</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exerciseSessionForm">
+                    <input type="hidden" id="selectedExercise">
+                    <div class="mb-3">
+                        <label for="userSelect" class="form-label">ユーザー選択</label>
+                        <select class="form-select" id="userSelect" required>
+                            <option value="">ユーザーを選択してください</option>
+                            <!-- ユーザーリストは動的に読み込み -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetReps" class="form-label">目標回数/時間</label>
+                        <input type="number" class="form-control" id="targetReps" placeholder="目標を設定（任意）">
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>選択された運動:</strong> <span id="selectedExerciseName"></span><br>
+                        <strong>消費カロリー:</strong> <span id="selectedExerciseCalories"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="submitExerciseSession()">セッション開始</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function startExerciseSession(exerciseId) {
+        const exercise = {
+            {% for exercise_id, exercise in exercises.items() %}
+            '{{ exercise_id }}': {
+                name: '{{ exercise.name }}',
+                calories: '{% if "calories_per_rep" in exercise %}{{ exercise.calories_per_rep }}kcal/回{% elif "calories_per_second" in exercise %}{{ exercise.calories_per_second }}kcal/秒{% endif %}'
+            },
+            {% endfor %}
+        };
+        
+        document.getElementById('selectedExercise').value = exerciseId;
+        document.getElementById('selectedExerciseName').textContent = exercise[exerciseId].name;
+        document.getElementById('selectedExerciseCalories').textContent = exercise[exerciseId].calories;
+        document.getElementById('exerciseModalTitle').textContent = exercise[exerciseId].name + ' セッション開始';
+        
+        // ユーザーリストを取得（簡略化）
+        loadUserList();
+        
+        const modal = new bootstrap.Modal(document.getElementById('exerciseModal'));
+        modal.show();
+    }
+    
+    function loadUserList() {
+        // 実際の実装では、APIからユーザーリストを取得
+        const userSelect = document.getElementById('userSelect');
+        userSelect.innerHTML = '<option value="">ユーザーを選択してください</option>';
+        
+        // サンプルユーザー（実際はAPIから取得）
+        const sampleUsers = [
+            {id: 'user001', name: '田中太郎'},
+            {id: 'user002', name: '佐藤花子'},
+        ];
+        
+        sampleUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.name;
+            userSelect.appendChild(option);
+        });
+    }
+    
+    function submitExerciseSession() {
+        const userId = document.getElementById('userSelect').value;
+        const exerciseType = document.getElementById('selectedExercise').value;
+        const targetReps = document.getElementById('targetReps').value;
+        
+        if (!userId) {
+            alert('ユーザーを選択してください。');
+            return;
+        }
+
+        fetch('/start_session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                exercise_type: exerciseType,
+                target_reps: targetReps ? parseInt(targetReps) : null
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('セッションが開始されました！');
+                bootstrap.Modal.getInstance(document.getElementById('exerciseModal')).hide();
+                
+                if (confirm('AIトレーナーとのセッションを開始しますか？\n新しいタブでトレーニング画面が開きます。')) {
+                    window.open('about:blank', '_blank'); // 実際のVision Agentsセッション画面のURLに置き換え
+                }
+            } else {
+                alert('エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('セッション開始に失敗しました。');
+        });
+    }
+</script>
+{% endblock %}

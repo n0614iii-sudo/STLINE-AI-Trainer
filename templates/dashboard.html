@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}ダッシュボード - パーソナルジム AI{% endblock %}
+{% block page_title %}ダッシュボード{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <!-- 統計カード -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card stats-card mb-4">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
+                            総ユーザー数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white">{{ total_users }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card stats-card mb-4">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
+                            総セッション数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white">{{ total_sessions }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dumbbell fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card stats-card mb-4">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
+                            今日のセッション
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white" id="today-sessions">-</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-day fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card stats-card mb-4">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
+                            週間セッション
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-white" id="week-sessions">-</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 最近のセッション -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-list"></i> 最近のトレーニングセッション
+            </div>
+            <div class="card-body">
+                {% if recent_sessions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ユーザー</th>
+                                <th>運動</th>
+                                <th>日時</th>
+                                <th>回数</th>
+                                <th>フォームスコア</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in recent_sessions %}
+                            <tr>
+                                <td>{{ session.user_name }}</td>
+                                <td>
+                                    <span class="badge bg-primary">{{ session.exercise }}</span>
+                                </td>
+                                <td>{{ session.date }}</td>
+                                <td>{{ session.reps }}回</td>
+                                <td>
+                                    {% if session.form_score >= 0.8 %}
+                                        <span class="badge bg-success">{{ session.form_score }}</span>
+                                    {% elif session.form_score >= 0.6 %}
+                                        <span class="badge bg-warning">{{ session.form_score }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ session.form_score }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p>まだセッションデータがありません</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 運動別統計 -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-chart-pie"></i> 週間運動統計
+            </div>
+            <div class="card-body">
+                <canvas id="exerciseChart" width="100" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- クイックアクション -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-bolt"></i> クイックアクション
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('add_user') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-user-plus"></i><br>
+                            新規ユーザー登録
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <button class="btn btn-success btn-lg w-100" onclick="startTrainingSession()">
+                            <i class="fas fa-play"></i><br>
+                            セッション開始
+                        </button>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('users_list') }}" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-users"></i><br>
+                            ユーザー一覧
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('exercises_list') }}" class="btn btn-warning btn-lg w-100">
+                            <i class="fas fa-dumbbell"></i><br>
+                            運動メニュー
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 統計データを取得して表示
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('today-sessions').textContent = data.today_sessions;
+            document.getElementById('week-sessions').textContent = data.week_sessions;
+            
+            // 円グラフを作成
+            const ctx = document.getElementById('exerciseChart').getContext('2d');
+            const exerciseNames = Object.values(data.exercise_stats).map(stat => stat.name);
+            const exerciseCounts = Object.values(data.exercise_stats).map(stat => stat.count);
+            
+            if (exerciseNames.length > 0) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: exerciseNames,
+                        datasets: [{
+                            data: exerciseCounts,
+                            backgroundColor: [
+                                '#667eea',
+                                '#764ba2',
+                                '#f093fb',
+                                '#f5576c',
+                                '#4facfe',
+                                '#00f2fe'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            } else {
+                // データがない場合の表示
+                ctx.canvas.style.display = 'none';
+                const container = ctx.canvas.parentElement;
+                container.innerHTML = '<div class="text-center text-muted"><i class="fas fa-chart-pie fa-3x mb-3"></i><p>統計データがありません</p></div>';
+            }
+        })
+        .catch(error => {
+            console.error('統計データの取得に失敗しました:', error);
+        });
+</script>
+{% endblock %}

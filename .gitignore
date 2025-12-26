@@ -1,0 +1,64 @@
+# 環境変数ファイル（APIキーを含む - 重要！）
+.env
+.env.local
+.env.*.local
+
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# ログファイル
+*.log
+logs/
+*.log.*
+
+# データファイル（個人情報を含む可能性）
+data/*.json
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE関連
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS関連
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 一時ファイル
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# テスト関連
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ビルド関連
+dist/
+build/
+*.egg-info/
+

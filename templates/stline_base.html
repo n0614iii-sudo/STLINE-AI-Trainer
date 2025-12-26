@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="STLINE AI Personal Trainer - 株式会社STLINE提供の次世代パーソナルジムAIトレーニングシステム">
+    <meta name="author" content="HIKARU NEJIKANE, STLINE Corporation">
+    <title>{% block title %}STLINE AI Personal Trainer{% endblock %}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --stline-primary: #667eea;
+            --stline-secondary: #764ba2;
+            --stline-success: #10b981;
+            --stline-warning: #f59e0b;
+            --stline-danger: #ef4444;
+            --stline-info: #3b82f6;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .sidebar {
+            background: linear-gradient(135deg, var(--stline-primary) 0%, var(--stline-secondary) 100%);
+            min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar .brand {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar .brand h3 {
+            color: white;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            font-size: 1.25rem;
+        }
+        
+        .sidebar .brand small {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.75rem;
+        }
+        
+        .sidebar .nav-link {
+            color: white !important;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin: 0.25rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255,255,255,0.15);
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.25);
+            font-weight: 500;
+        }
+        
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 1rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--stline-primary) 0%, var(--stline-secondary) 100%);
+            color: white;
+            border-radius: 1rem 1rem 0 0 !important;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--stline-primary) 0%, var(--stline-secondary) 100%);
+            border: none;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-2px);
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, var(--stline-primary) 0%, var(--stline-secondary) 100%);
+            color: white;
+        }
+        
+        .page-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, var(--stline-primary) 0%, var(--stline-secondary) 100%);
+            color: white;
+            padding: 1.5rem;
+            margin-top: 3rem;
+            border-radius: 1rem;
+        }
+        
+        .footer small {
+            opacity: 0.9;
+        }
+        
+        .badge {
+            font-weight: 500;
+            padding: 0.5em 0.75em;
+        }
+        
+        .table {
+            background: white;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        /* アニメーション */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--stline-primary) 0%, var(--stline-secondary) 100%);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- サイドバー -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <!-- ブランド -->
+                    <div class="brand mb-4">
+                        <i class="fas fa-dumbbell fa-3x text-white mb-2"></i>
+                        <h3>STLINE</h3>
+                        <small>AI Personal Trainer</small>
+                        <hr style="border-color: rgba(255,255,255,0.2); margin: 1rem 0;">
+                        <small style="font-size: 0.7rem;">by HIKARU NEJIKANE</small>
+                    </div>
+                    
+                    <!-- ナビゲーション -->
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-chart-line me-2"></i>
+                                ダッシュボード
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'users_list' %}active{% endif %}" href="{{ url_for('users_list') }}">
+                                <i class="fas fa-users me-2"></i>
+                                ユーザー管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'exercises_list' %}active{% endif %}" href="{{ url_for('exercises_list') }}">
+                                <i class="fas fa-running me-2"></i>
+                                運動メニュー
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="startTrainingSession()">
+                                <i class="fas fa-play-circle me-2"></i>
+                                セッション開始
+                            </a>
+                        </li>
+                        <li class="nav-item mt-3">
+                            <hr style="border-color: rgba(255,255,255,0.2);">
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSystemInfo()">
+                                <i class="fas fa-info-circle me-2"></i>
+                                システム情報
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSupport()">
+                                <i class="fas fa-life-ring me-2"></i>
+                                サポート
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- バージョン情報 -->
+                    <div class="mt-auto pt-3 px-3" style="position: absolute; bottom: 20px; left: 0; right: 0;">
+                        <small class="text-white-50">
+                            <i class="fas fa-code-branch"></i> Version 1.0.0<br>
+                            <i class="fas fa-copyright"></i> 2025 STLINE Corp.
+                        </small>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- メインコンテンツ -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- ページヘッダー -->
+                <div class="page-header animate-fade-in">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h2 mb-1">{% block page_title %}{% endblock %}</h1>
+                            <p class="text-muted mb-0">{% block page_subtitle %}{% endblock %}</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary btn-sm" onclick="showQuickHelp()">
+                                <i class="fas fa-question-circle"></i> ヘルプ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- コンテンツ -->
+                <div class="animate-fade-in">
+                    {% block content %}{% endblock %}
+                </div>
+
+                <!-- フッター -->
+                <footer class="footer text-center">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>STLINE AI Personal Trainer</strong><br>
+                            <small>Powered by Vision Agents</small>
+                        </div>
+                        <div class="col-md-4">
+                            <small>
+                                Designed by HIKARU NEJIKANE<br>
+                                株式会社STLINE
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <small>
+                                <i class="fas fa-envelope"></i> support@stline.co.jp<br>
+                                <i class="fas fa-phone"></i> 03-XXXX-XXXX
+                            </small>
+                        </div>
+                    </div>
+                    <hr style="border-color: rgba(255,255,255,0.3); margin: 1rem 0;">
+                    <small>
+                        Copyright © 2025 STLINE Corporation. All Rights Reserved.
+                    </small>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // システム情報表示
+        function showSystemInfo() {
+            alert('STLINE AI Personal Trainer System\n\nVersion: 1.0.0\nDeveloped by: HIKARU NEJIKANE\nCompany: 株式会社STLINE\n\nPowered by Vision Agents & YOLO11');
+        }
+        
+        // サポート情報表示
+        function showSupport() {
+            alert('サポート窓口\n\nEmail: support@stline.co.jp\n電話: 03-XXXX-XXXX\n営業時間: 平日 10:00-18:00\n\nWebサイト: https://stline.co.jp');
+        }
+        
+        // クイックヘルプ
+        function showQuickHelp() {
+            alert('クイックヘルプ\n\n1. 新規ユーザー登録\n2. セッション開始\n3. トレーニング実施\n4. 結果確認\n\n詳細はサポートにお問い合わせください。');
+        }
+        
+        // セッション開始
+        function startTrainingSession() {
+            const modal = new bootstrap.Modal(document.getElementById('trainingModal') || createTrainingModal());
+            modal.show();
+        }
+
+        function createTrainingModal() {
+            const modalHtml = `
+                <div class="modal fade" id="trainingModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header" style="background: linear-gradient(135deg, var(--stline-primary) 0%, var(--stline-secondary) 100%); color: white;">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-play-circle"></i> トレーニングセッション開始
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="sessionForm">
+                                    <div class="mb-3">
+                                        <label for="userId" class="form-label">ユーザー選択</label>
+                                        <select class="form-select" id="userId" required>
+                                            <option value="">ユーザーを選択してください</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="exerciseType" class="form-label">運動種目</label>
+                                        <select class="form-select" id="exerciseType" required>
+                                            <option value="">選択してください</option>
+                                            <option value="squat">スクワット</option>
+                                            <option value="push_up">腕立て伏せ</option>
+                                            <option value="deadlift">デッドリフト</option>
+                                            <option value="plank">プランク</option>
+                                        </select>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>STLINE AI</strong>が最適なフォーム指導を行います
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                                <button type="button" class="btn btn-primary" onclick="submitSession()">
+                                    <i class="fas fa-rocket"></i> セッション開始
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            return document.getElementById('trainingModal');
+        }
+
+        function submitSession() {
+            const userId = document.getElementById('userId').value;
+            const exerciseType = document.getElementById('exerciseType').value;
+            
+            if (!userId || !exerciseType) {
+                alert('すべての項目を選択してください。');
+                return;
+            }
+
+            fetch('/start_session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    exercise_type: exerciseType
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('セッションが開始されました！\nSTLINE AIトレーナーが指導を開始します。');
+                    bootstrap.Modal.getInstance(document.getElementById('trainingModal')).hide();
+                } else {
+                    alert('エラー: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('セッション開始に失敗しました。');
+            });
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

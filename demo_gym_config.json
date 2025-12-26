@@ -1,0 +1,688 @@
+{
+  "user_profiles": {
+    "demo_beginner": {
+      "user_id": "demo_beginner",
+      "name": "田中太郎",
+      "fitness_level": "beginner",
+      "target_goals": [
+        "weight_loss",
+        "general_fitness"
+      ],
+      "physical_limitations": [],
+      "preferred_language": "ja",
+      "workout_history": [
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-11-26 11:00:56.963467",
+          "end_time": "2025-11-26 11:25:56.963467",
+          "rep_count": 5,
+          "form_score": 0.7427487678054522,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 1.45
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "squat",
+          "start_time": "2025-11-28 11:00:56.963551",
+          "end_time": "2025-11-28 11:19:56.963551",
+          "rep_count": 13,
+          "form_score": 0.5086953203424214,
+          "feedback_notes": [],
+          "calories_burned": 4.16
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-11-30 11:00:56.963561",
+          "end_time": "2025-11-30 11:30:56.963561",
+          "rep_count": 5,
+          "form_score": 0.685528204919701,
+          "feedback_notes": [
+            "フォームに注意してください"
+          ],
+          "calories_burned": 1.45
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-02 11:00:56.963566",
+          "end_time": "2025-12-02 11:21:56.963566",
+          "rep_count": 8,
+          "form_score": 0.7362859005073781,
+          "feedback_notes": [
+            "良いペースです"
+          ],
+          "calories_burned": 2.32
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-04 11:00:56.963570",
+          "end_time": "2025-12-04 11:21:56.963570",
+          "rep_count": 8,
+          "form_score": 0.5371802222937296,
+          "feedback_notes": [
+            "フォームに注意してください",
+            "フォームに注意してください"
+          ],
+          "calories_burned": 2.32
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "squat",
+          "start_time": "2025-12-06 11:00:56.963575",
+          "end_time": "2025-12-06 11:20:56.963575",
+          "rep_count": 11,
+          "form_score": 0.799010099389817,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 3.52
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-08 11:00:56.963578",
+          "end_time": "2025-12-08 11:20:56.963578",
+          "rep_count": 6,
+          "form_score": 0.6184913110963595,
+          "feedback_notes": [],
+          "calories_burned": 1.7399999999999998
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "squat",
+          "start_time": "2025-12-10 11:00:56.963582",
+          "end_time": "2025-12-10 11:26:56.963582",
+          "rep_count": 10,
+          "form_score": 0.7339989606267667,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 3.2
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-12 11:00:56.963585",
+          "end_time": "2025-12-12 11:18:56.963585",
+          "rep_count": 8,
+          "form_score": 0.7498048071738617,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 2.32
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-14 11:00:56.963588",
+          "end_time": "2025-12-14 11:27:56.963588",
+          "rep_count": 6,
+          "form_score": 0.5244559752009923,
+          "feedback_notes": [
+            "フォームに注意してください",
+            "フォームに注意してください",
+            "フォームに注意してください"
+          ],
+          "calories_burned": 1.7399999999999998
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-16 11:00:56.963591",
+          "end_time": "2025-12-16 11:28:56.963591",
+          "rep_count": 8,
+          "form_score": 0.5089607194198577,
+          "feedback_notes": [],
+          "calories_burned": 2.32
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "squat",
+          "start_time": "2025-12-18 11:00:56.963599",
+          "end_time": "2025-12-18 11:25:56.963599",
+          "rep_count": 11,
+          "form_score": 0.7270753030670165,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 3.52
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-20 11:00:56.963602",
+          "end_time": "2025-12-20 11:23:56.963602",
+          "rep_count": 8,
+          "form_score": 0.5436063672409912,
+          "feedback_notes": [
+            "フォームに注意してください",
+            "フォームに注意してください",
+            "フォームに注意してください"
+          ],
+          "calories_burned": 2.32
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "squat",
+          "start_time": "2025-12-22 11:00:56.963606",
+          "end_time": "2025-12-22 11:20:56.963606",
+          "rep_count": 10,
+          "form_score": 0.7798578115123573,
+          "feedback_notes": [],
+          "calories_burned": 3.2
+        },
+        {
+          "user_id": "demo_beginner",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-24 11:00:56.963609",
+          "end_time": "2025-12-24 11:25:56.963609",
+          "rep_count": 6,
+          "form_score": 0.6769270075494003,
+          "feedback_notes": [
+            "フォームに注意してください",
+            "フォームに注意してください",
+            "フォームに注意してください"
+          ],
+          "calories_burned": 1.7399999999999998
+        }
+      ]
+    },
+    "demo_intermediate": {
+      "user_id": "demo_intermediate",
+      "name": "佐藤花子",
+      "fitness_level": "intermediate",
+      "target_goals": [
+        "muscle_gain",
+        "strength"
+      ],
+      "physical_limitations": [
+        "knee_issues"
+      ],
+      "preferred_language": "ja",
+      "workout_history": [
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "push_up",
+          "start_time": "2025-11-26 11:00:56.963612",
+          "end_time": "2025-11-26 11:17:56.963612",
+          "rep_count": 11,
+          "form_score": 0.7888631616904715,
+          "feedback_notes": [
+            "良いペースです"
+          ],
+          "calories_burned": 3.19
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "squat",
+          "start_time": "2025-11-28 11:00:56.963616",
+          "end_time": "2025-11-28 11:18:56.963616",
+          "rep_count": 14,
+          "form_score": 0.8340508464412048,
+          "feedback_notes": [],
+          "calories_burned": 4.48
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "squat",
+          "start_time": "2025-11-30 11:00:56.963620",
+          "end_time": "2025-11-30 11:18:56.963620",
+          "rep_count": 13,
+          "form_score": 0.8437564674534407,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 4.16
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-02 11:00:56.963623",
+          "end_time": "2025-12-02 11:21:56.963623",
+          "rep_count": 13,
+          "form_score": 0.8441671451807173,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 3.7699999999999996
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "plank",
+          "start_time": "2025-12-04 11:00:56.963626",
+          "end_time": "2025-12-04 11:26:56.963626",
+          "rep_count": 42,
+          "form_score": 0.8549982406273852,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 78.0
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-06 11:00:56.963633",
+          "end_time": "2025-12-06 11:30:56.963633",
+          "rep_count": 9,
+          "form_score": 0.762908055661155,
+          "feedback_notes": [],
+          "calories_burned": 2.61
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-08 11:00:56.963638",
+          "end_time": "2025-12-08 11:22:56.963638",
+          "rep_count": 11,
+          "form_score": 0.7141678922658501,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 3.19
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "squat",
+          "start_time": "2025-12-10 11:00:56.963642",
+          "end_time": "2025-12-10 11:21:56.963642",
+          "rep_count": 15,
+          "form_score": 0.8656537697762494,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 4.8
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-12 11:00:56.963645",
+          "end_time": "2025-12-12 11:21:56.963645",
+          "rep_count": 11,
+          "form_score": 0.7927732796789411,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 3.19
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "plank",
+          "start_time": "2025-12-14 11:00:56.963648",
+          "end_time": "2025-12-14 11:16:56.963648",
+          "rep_count": 49,
+          "form_score": 0.7367728568218654,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 48.0
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "squat",
+          "start_time": "2025-12-16 11:00:56.963652",
+          "end_time": "2025-12-16 11:17:56.963652",
+          "rep_count": 14,
+          "form_score": 0.8007650481824617,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 4.48
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-18 11:00:56.963656",
+          "end_time": "2025-12-18 11:21:56.963656",
+          "rep_count": 10,
+          "form_score": 0.7182648730806536,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 2.9
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "squat",
+          "start_time": "2025-12-20 11:00:56.963659",
+          "end_time": "2025-12-20 11:28:56.963659",
+          "rep_count": 14,
+          "form_score": 0.7390711698648524,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 4.48
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "plank",
+          "start_time": "2025-12-22 11:00:56.963662",
+          "end_time": "2025-12-22 11:24:56.963662",
+          "rep_count": 33,
+          "form_score": 0.8094713609889514,
+          "feedback_notes": [
+            "良いペースです"
+          ],
+          "calories_burned": 72.0
+        },
+        {
+          "user_id": "demo_intermediate",
+          "exercise_type": "squat",
+          "start_time": "2025-12-24 11:00:56.963665",
+          "end_time": "2025-12-24 11:12:56.963665",
+          "rep_count": 16,
+          "form_score": 0.8592269063126599,
+          "feedback_notes": [],
+          "calories_burned": 5.12
+        }
+      ]
+    },
+    "demo_advanced": {
+      "user_id": "demo_advanced",
+      "name": "鈴木一郎",
+      "fitness_level": "advanced",
+      "target_goals": [
+        "strength",
+        "endurance"
+      ],
+      "physical_limitations": [],
+      "preferred_language": "ja",
+      "workout_history": [
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "deadlift",
+          "start_time": "2025-11-26 11:00:56.963668",
+          "end_time": "2025-11-26 11:30:56.963668",
+          "rep_count": 12,
+          "form_score": 0.9406792880609789,
+          "feedback_notes": [
+            "素晴らしいフォームです！",
+            "素晴らしいフォームです！"
+          ],
+          "calories_burned": 5.4
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "plank",
+          "start_time": "2025-11-28 11:00:56.963672",
+          "end_time": "2025-11-28 11:12:56.963672",
+          "rep_count": 65,
+          "form_score": 0.8462831838989946,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 36.0
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "push_up",
+          "start_time": "2025-11-30 11:00:56.963675",
+          "end_time": "2025-11-30 11:28:56.963675",
+          "rep_count": 20,
+          "form_score": 0.9467081722561697,
+          "feedback_notes": [],
+          "calories_burned": 5.8
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "squat",
+          "start_time": "2025-12-02 11:00:56.963679",
+          "end_time": "2025-12-02 11:21:56.963679",
+          "rep_count": 17,
+          "form_score": 0.8466512614649012,
+          "feedback_notes": [],
+          "calories_burned": 5.44
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "push_up",
+          "start_time": "2025-12-04 11:00:56.963681",
+          "end_time": "2025-12-04 11:12:56.963681",
+          "rep_count": 19,
+          "form_score": 0.9564629510814397,
+          "feedback_notes": [
+            "素晴らしいフォームです！",
+            "素晴らしいフォームです！"
+          ],
+          "calories_burned": 5.51
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "deadlift",
+          "start_time": "2025-12-06 11:00:56.963688",
+          "end_time": "2025-12-06 11:27:56.963688",
+          "rep_count": 10,
+          "form_score": 0.9968796805193298,
+          "feedback_notes": [
+            "素晴らしいフォームです！",
+            "素晴らしいフォームです！",
+            "素晴らしいフォームです！"
+          ],
+          "calories_burned": 4.5
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "squat",
+          "start_time": "2025-12-08 11:00:56.963692",
+          "end_time": "2025-12-08 11:16:56.963692",
+          "rep_count": 23,
+          "form_score": 0.9796762113339741,
+          "feedback_notes": [
+            "素晴らしいフォームです！",
+            "素晴らしいフォームです！"
+          ],
+          "calories_burned": 7.36
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "squat",
+          "start_time": "2025-12-10 11:00:56.963695",
+          "end_time": "2025-12-10 11:18:56.963695",
+          "rep_count": 22,
+          "form_score": 0.8655680110766695,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 7.04
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "squat",
+          "start_time": "2025-12-12 11:00:56.963698",
+          "end_time": "2025-12-12 11:20:56.963698",
+          "rep_count": 22,
+          "form_score": 0.8490344495187927,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 7.04
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "deadlift",
+          "start_time": "2025-12-14 11:00:56.963701",
+          "end_time": "2025-12-14 11:15:56.963701",
+          "rep_count": 13,
+          "form_score": 0.9717140965648827,
+          "feedback_notes": [
+            "素晴らしいフォームです！",
+            "素晴らしいフォームです！",
+            "素晴らしいフォームです！"
+          ],
+          "calories_burned": 5.8500000000000005
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "deadlift",
+          "start_time": "2025-12-16 11:00:56.963704",
+          "end_time": "2025-12-16 11:20:56.963704",
+          "rep_count": 11,
+          "form_score": 0.8727241588852528,
+          "feedback_notes": [
+            "良いペースです",
+            "良いペースです"
+          ],
+          "calories_burned": 4.95
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "plank",
+          "start_time": "2025-12-18 11:00:56.963707",
+          "end_time": "2025-12-18 11:14:56.963707",
+          "rep_count": 49,
+          "form_score": 0.9390968264865416,
+          "feedback_notes": [
+            "素晴らしいフォームです！",
+            "素晴らしいフォームです！"
+          ],
+          "calories_burned": 42.0
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "plank",
+          "start_time": "2025-12-20 11:00:56.963710",
+          "end_time": "2025-12-20 11:10:56.963710",
+          "rep_count": 62,
+          "form_score": 0.8835924920564068,
+          "feedback_notes": [],
+          "calories_burned": 30.0
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "plank",
+          "start_time": "2025-12-22 11:00:56.963713",
+          "end_time": "2025-12-22 11:12:56.963713",
+          "rep_count": 44,
+          "form_score": 0.9259364045273588,
+          "feedback_notes": [],
+          "calories_burned": 36.0
+        },
+        {
+          "user_id": "demo_advanced",
+          "exercise_type": "plank",
+          "start_time": "2025-12-24 11:00:56.963716",
+          "end_time": "2025-12-24 11:15:56.963716",
+          "rep_count": 60,
+          "form_score": 0.9696356269801194,
+          "feedback_notes": [],
+          "calories_burned": 45.0
+        }
+      ]
+    }
+  },
+  "exercise_database": {
+    "squat": {
+      "name": "スクワット",
+      "target_muscles": [
+        "大腿四頭筋",
+        "大臀筋",
+        "ハムストリング"
+      ],
+      "form_checkpoints": [
+        "膝がつま先より前に出すぎない",
+        "背中をまっすぐ保つ",
+        "太ももが床と平行になるまで下げる",
+        "かかとに体重をかける"
+      ],
+      "common_mistakes": [
+        "膝の内転",
+        "前傾姿勢",
+        "可動域不足",
+        "足首の硬さ"
+      ],
+      "calories_per_rep": 0.32
+    },
+    "push_up": {
+      "name": "腕立て伏せ",
+      "target_muscles": [
+        "大胸筋",
+        "三角筋",
+        "上腕三頭筋"
+      ],
+      "form_checkpoints": [
+        "体を一直線に保つ",
+        "手の位置は肩幅よりやや広く",
+        "胸を床に近づける",
+        "肘は45度の角度"
+      ],
+      "common_mistakes": [
+        "腰の反り",
+        "可動域不足",
+        "肘の開きすぎ",
+        "頭の下がり"
+      ],
+      "calories_per_rep": 0.29
+    },
+    "deadlift": {
+      "name": "デッドリフト",
+      "target_muscles": [
+        "ハムストリング",
+        "大臀筋",
+        "脊柱起立筋"
+      ],
+      "form_checkpoints": [
+        "バーを体に近づける",
+        "背中をニュートラルに保つ",
+        "膝と股関節を同時に伸展",
+        "肩甲骨を後ろに引く"
+      ],
+      "common_mistakes": [
+        "バーが体から離れる",
+        "背中の丸まり",
+        "膝の前方移動",
+        "肩の前方突出"
+      ],
+      "calories_per_rep": 0.45
+    },
+    "plank": {
+      "name": "プランク",
+      "target_muscles": [
+        "腹直筋",
+        "腹横筋",
+        "脊柱起立筋"
+      ],
+      "form_checkpoints": [
+        "体を一直線に保つ",
+        "肘は肩の真下に置く",
+        "お尻を上げすぎない",
+        "呼吸を止めない"
+      ],
+      "common_mistakes": [
+        "腰の反り",
+        "お尻の上がり",
+        "頭の下がり",
+        "肘の位置不良"
+      ],
+      "calories_per_second": 0.05
+    }
+  }
+}

@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}ユーザー管理 - パーソナルジム AI{% endblock %}
+{% block page_title %}ユーザー管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>登録ユーザー一覧</h2>
+    <a href="{{ url_for('add_user') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> 新規ユーザー登録
+    </a>
+</div>
+
+{% if users %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ユーザーID</th>
+                        <th>名前</th>
+                        <th>フィットネスレベル</th>
+                        <th>目標</th>
+                        <th>総セッション数</th>
+                        <th>最終セッション</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td><code>{{ user.user_id }}</code></td>
+                        <td>
+                            <strong>{{ user.name }}</strong>
+                        </td>
+                        <td>
+                            {% if user.fitness_level == 'beginner' %}
+                                <span class="badge bg-success">初心者</span>
+                            {% elif user.fitness_level == 'intermediate' %}
+                                <span class="badge bg-warning">中級者</span>
+                            {% else %}
+                                <span class="badge bg-danger">上級者</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ user.target_goals }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ user.total_sessions }}回</span>
+                        </td>
+                        <td>{{ user.last_session }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('user_detail', user_id=user.user_id) }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-outline-success" onclick="startSessionForUser('{{ user.user_id }}')">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center">
+        <div class="mb-4">
+            <i class="fas fa-users fa-5x text-muted"></i>
+        </div>
+        <h4 class="text-muted">ユーザーが登録されていません</h4>
+        <p class="text-muted">まずは新規ユーザーを登録してください。</p>
+        <a href="{{ url_for('add_user') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus"></i> 最初のユーザーを登録
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- セッション開始モーダル -->
+<div class="modal fade" id="sessionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">セッション開始</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="sessionForm">
+                    <input type="hidden" id="selectedUserId">
+                    <div class="mb-3">
+                        <label for="selectedUserName" class="form-label">選択されたユーザー</label>
+                        <input type="text" class="form-control" id="selectedUserName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="exerciseType" class="form-label">運動種目</label>
+                        <select class="form-select" id="exerciseType" required>
+                            <option value="">選択してください</option>
+                            <option value="squat">スクワット</option>
+                            <option value="push_up">腕立て伏せ</option>
+                            <option value="deadlift">デッドリフト</option>
+                            <option value="plank">プランク</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                <button type="button" class="btn btn-primary" onclick="submitUserSession()">セッション開始</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function startSessionForUser(userId) {
+        // ユーザー名を取得
+        const userRow = document.querySelector(`tr:has(code:contains('${userId}'))`);
+        let userName = userId;
+        if (userRow) {
+            userName = userRow.querySelector('strong').textContent;
+        }
+        
+        document.getElementById('selectedUserId').value = userId;
+        document.getElementById('selectedUserName').value = userName;
+        
+        const modal = new bootstrap.Modal(document.getElementById('sessionModal'));
+        modal.show();
+    }
+
+    function submitUserSession() {
+        const userId = document.getElementById('selectedUserId').value;
+        const exerciseType = document.getElementById('exerciseType').value;
+        
+        if (!exerciseType) {
+            alert('運動種目を選択してください。');
+            return;
+        }
+
+        fetch('/start_session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                exercise_type: exerciseType
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('セッションが開始されました！');
+                bootstrap.Modal.getInstance(document.getElementById('sessionModal')).hide();
+                
+                // 実際のトレーニング画面またはVision Agentsセッションに誘導
+                if (confirm('AIトレーナーとのセッションを開始しますか？\n新しいタブでトレーニング画面が開きます。')) {
+                    window.open('about:blank', '_blank'); // 実際のVision Agentsセッション画面のURLに置き換え
+                }
+            } else {
+                alert('エラー: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('セッション開始に失敗しました。');
+        });
+    }
+
+    // テーブル検索機能
+    function filterUsers() {
+        const input = document.getElementById('userSearch');
+        const filter = input.value.toLowerCase();
+        const rows = document.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+    }
+
+    // 検索ボックスを追加（動的に）
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableCard = document.querySelector('.card .card-body');
+        if (tableCard && document.querySelector('tbody tr')) {
+            const searchHtml = `
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="userSearch" placeholder="ユーザーを検索..." onkeyup="filterUsers()">
+                    </div>
+                </div>
+            `;
+            tableCard.insertAdjacentHTML('afterbegin', searchHtml);
+        }
+    });
+</script>
+{% endblock %}

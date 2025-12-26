@@ -1,0 +1,18 @@
+[Unit]
+Description=STLINE AI Trainer Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/stline-ai-trainer
+Environment="PATH=/var/www/stline-ai-trainer/venv/bin"
+ExecStart=/var/www/stline-ai-trainer/venv/bin/python gym_dashboard.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

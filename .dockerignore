@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# データ
+*.json
+!requirements.txt
+data/
+logs/
+*.log
+
+# Git
+.git/
+.gitignore
+
+# ドキュメント
+*.md
+!README.md
+
+# その他
+.DS_Store
+*.tmp
+*.bak
+
