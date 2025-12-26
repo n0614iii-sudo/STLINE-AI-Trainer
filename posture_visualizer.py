@@ -329,9 +329,9 @@ class PostureVisualizer:
                              (x_right + text_width + 5, y_right + baseline + 3),
                              severity_color, 1)
                 
-                cv2.putText(image, text, (x_right, y_offset), 
+                cv2.putText(image, text, (x_right, y_right), 
                            font, font_scale_issue, severity_color, thickness_issue)
-                y_offset += 28
+                y_right += 28
         
         return image
         
