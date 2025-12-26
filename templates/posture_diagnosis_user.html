@@ -496,6 +496,17 @@
             `;
         }
         
+        // PDFダウンロードボタンを追加
+        html += `
+            <div class="mb-4 text-center">
+                <button onclick="generatePDF(${JSON.stringify(analysis).replace(/"/g, '&quot;')}, '${reportImageUrl || ''}', '${xrayImageUrl || ''}', '${visualizedImageUrl || ''}')" 
+                        class="btn btn-3d btn-lg" 
+                        style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 15px 30px; font-size: 18px;">
+                    <i class="fas fa-file-pdf me-2"></i> 診断結果をPDFでダウンロード
+                </button>
+            </div>
+        `;
+        
         html += `
             <div class="row mb-4">
                 <div class="col-md-6">

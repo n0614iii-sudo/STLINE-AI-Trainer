@@ -18,6 +18,7 @@ from posture_analyzer import PostureAnalyzer, PostureAnalysis
 from posture_detector import PostureDetector
 from posture_visualizer import PostureVisualizer
 from posture_type_detector import PostureTypeDetector
+from pdf_generator import PDFGenerator
 
 # 環境変数を読み込み
 load_dotenv()
