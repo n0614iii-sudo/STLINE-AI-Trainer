@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}姿勢診断{% endblock %}
+{% block title %}姿勢診断 - STLINE AI Personal Trainer{% endblock %}
 {% block page_title %}<i class="fas fa-user-md"></i> 姿勢診断{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <div class="card mb-4">
+        <div class="card-3d mb-4">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-info-circle"></i> 姿勢診断について</h5>
+                <h5 class="mb-0 text-white"><i class="fas fa-info-circle me-2"></i> 姿勢診断について</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body text-white">
                 <p>姿勢診断機能では、YOLO11-Poseを使用してリアルタイムで姿勢を分析し、以下の項目を評価します：</p>
                 <ul>
                     <li><strong>肩の水平度</strong>: 左右の肩の高さの違いを検出</li>
@@ -19,8 +19,8 @@
                     <li><strong>首の位置</strong>: ストレートネックや前傾姿勢を検出</li>
                     <li><strong>頭部の位置</strong>: 頭部の中心からのずれを検出</li>
                 </ul>
-                <p class="text-muted mb-0">
-                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                <p class="text-white-50 mb-0">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                     姿勢診断を開始するには、ユーザーを選択してカメラのアクセスを許可してください。
                 </p>
             </div>
@@ -30,24 +30,25 @@
 
 <div class="row">
     <div class="col-12">
-        <div class="card">
+        <div class="card-3d">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-users"></i> ユーザーを選択</h5>
+                <h5 class="mb-0 text-white"><i class="fas fa-users me-2"></i> ユーザーを選択</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body text-white">
                 {% if users %}
                 <div class="row">
                     {% for user in users %}
-                    <div class="col-md-4 mb-3">
-                        <div class="card h-100">
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <div class="card-3d h-100" style="background: rgba(255, 255, 255, 0.03);">
                             <div class="card-body text-center">
-                                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
-                                    <i class="fas fa-user fa-2x"></i>
+                                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                                     style="width: 70px; height: 70px; background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);">
+                                    <i class="fas fa-user fa-2x text-white"></i>
                                 </div>
-                                <h5>{{ user.name }}</h5>
-                                <p class="text-muted small">{{ user.user_id }}</p>
-                                <a href="{{ url_for('posture_diagnosis_user', user_id=user.user_id) }}" class="btn btn-primary">
-                                    <i class="fas fa-camera"></i> 姿勢診断を開始
+                                <h5 class="text-white">{{ user.name }}</h5>
+                                <p class="text-white-50 small mb-3">{{ user.user_id }}</p>
+                                <a href="{{ url_for('posture_diagnosis_user', user_id=user.user_id) }}" class="btn btn-3d w-100">
+                                    <i class="fas fa-camera me-2"></i> 姿勢診断を開始
                                 </a>
                             </div>
                         </div>
