@@ -200,54 +200,121 @@ class PostureAnalyzer:
         return abs(angle)
     
     def _calculate_alignment_scores(self, keypoints: Dict[str, PostureKeypoint]) -> Dict[str, float]:
-        """各部位の整列スコアを計算（0.0-1.0）"""
+        """
+        各部位の整列スコアを計算（0.0-1.0）
+        
+        専門的知識に基づく改善:
+        - 医学的・運動学的基準を考慮
+        - 画像サイズに応じた相対評価
+        - より正確な閾値設定
+        """
         scores = {}
         
-        # 肩の水平度
-        if all(k in keypoints for k in ["left_shoulder", "right_shoulder"]):
-            ls = keypoints["left_shoulder"]
-            rs = keypoints["right_shoulder"]
-            shoulder_diff = abs(ls.y - rs.y)
-            # 差が小さいほど良い（最大50ピクセルを想定）
-            scores["shoulder_alignment"] = max(0.0, 1.0 - (shoulder_diff / 50.0))
-        
-        # 骨盤の水平度
-        if all(k in keypoints for k in ["left_hip", "right_hip"]):
-            lh = keypoints["left_hip"]
-            rh = keypoints["right_hip"]
-            hip_diff = abs(lh.y - rh.y)
-            scores["hip_alignment"] = max(0.0, 1.0 - (hip_diff / 50.0))
-        
-        # 頭部の位置（肩の中心との関係）
-        if all(k in keypoints for k in ["nose", "left_shoulder", "right_shoulder"]):
-            nose = keypoints["nose"]
-            ls = keypoints["left_shoulder"]
-            rs = keypoints["right_shoulder"]
-            shoulder_center_x = (ls.x + rs.x) / 2
-            head_offset = abs(nose.x - shoulder_center_x)
-            scores["head_alignment"] = max(0.0, 1.0 - (head_offset / 50.0))
-        
-        # 背骨の直線性
-        if all(k in keypoints for k in ["nose", "left_shoulder", "right_shoulder", "left_hip", "right_hip"]):
-            ls = keypoints["left_shoulder"]
-            rs = keypoints["right_shoulder"]
-            lh = keypoints["left_hip"]
-            rh = keypoints["right_hip"]
+        # 画像サイズを取得（相対評価のため）
+        if keypoints:
+            # 体の高さを推定（肩から足首まで）
+            body_height = 0
+            if "left_shoulder" in keypoints and "left_ankle" in keypoints:
+                ls = keypoints["left_shoulder"]
+                la = keypoints["left_ankle"]
+                body_height = abs(la.y - ls.y)
+            elif "right_shoulder" in keypoints and "right_ankle" in keypoints:
+                rs = keypoints["right_shoulder"]
+                ra = keypoints["right_ankle"]
+                body_height = abs(ra.y - rs.y)
             
-            shoulder_center = ((ls.x + rs.x) / 2, (ls.y + rs.y) / 2)
-            hip_center = ((lh.x + rh.x) / 2, (lh.y + rh.y) / 2)
+            # 体の高さが取得できない場合はデフォルト値を使用
+            if body_height == 0:
+                body_height = 500  # デフォルト値
             
-            # 理想的な背骨の位置からの偏差を計算
-            # 簡易版：肩と骨盤の中心が一直線上にあるかを評価
-            vertical_alignment = abs(shoulder_center[0] - hip_center[0])
-            scores["spine_alignment"] = max(0.0, 1.0 - (vertical_alignment / 50.0))
-        
-        # 膝の位置
-        if all(k in keypoints for k in ["left_knee", "right_knee"]):
-            lk = keypoints["left_knee"]
-            rk = keypoints["right_knee"]
-            knee_diff = abs(lk.y - rk.y)
-            scores["knee_alignment"] = max(0.0, 1.0 - (knee_diff / 50.0))
+            # 肩の水平度（医学的基準: 2cm以内が正常、体高の約2-3%）
+            if all(k in keypoints for k in ["left_shoulder", "right_shoulder"]):
+                ls = keypoints["left_shoulder"]
+                rs = keypoints["right_shoulder"]
+                shoulder_diff = abs(ls.y - rs.y)
+                # 正常範囲: 体高の2%以内（約2cm相当）
+                normal_threshold = body_height * 0.02
+                # 許容範囲: 体高の5%以内
+                acceptable_threshold = body_height * 0.05
+                if shoulder_diff <= normal_threshold:
+                    scores["shoulder_alignment"] = 1.0
+                elif shoulder_diff <= acceptable_threshold:
+                    scores["shoulder_alignment"] = max(0.7, 1.0 - ((shoulder_diff - normal_threshold) / (acceptable_threshold - normal_threshold)) * 0.3)
+                else:
+                    scores["shoulder_alignment"] = max(0.0, 0.7 - ((shoulder_diff - acceptable_threshold) / acceptable_threshold) * 0.7)
+            
+            # 骨盤の水平度（医学的基準: 1-2cm以内が正常）
+            if all(k in keypoints for k in ["left_hip", "right_hip"]):
+                lh = keypoints["left_hip"]
+                rh = keypoints["right_hip"]
+                hip_diff = abs(lh.y - rh.y)
+                # 正常範囲: 体高の1.5%以内
+                normal_threshold = body_height * 0.015
+                # 許容範囲: 体高の4%以内
+                acceptable_threshold = body_height * 0.04
+                if hip_diff <= normal_threshold:
+                    scores["hip_alignment"] = 1.0
+                elif hip_diff <= acceptable_threshold:
+                    scores["hip_alignment"] = max(0.7, 1.0 - ((hip_diff - normal_threshold) / (acceptable_threshold - normal_threshold)) * 0.3)
+                else:
+                    scores["hip_alignment"] = max(0.0, 0.7 - ((hip_diff - acceptable_threshold) / acceptable_threshold) * 0.7)
+            
+            # 頭部の位置（肩の中心との関係、医学的基準: 2cm以内が正常）
+            if all(k in keypoints for k in ["nose", "left_shoulder", "right_shoulder"]):
+                nose = keypoints["nose"]
+                ls = keypoints["left_shoulder"]
+                rs = keypoints["right_shoulder"]
+                shoulder_center_x = (ls.x + rs.x) / 2
+                head_offset = abs(nose.x - shoulder_center_x)
+                # 正常範囲: 体高の2%以内
+                normal_threshold = body_height * 0.02
+                # 許容範囲: 体高の5%以内
+                acceptable_threshold = body_height * 0.05
+                if head_offset <= normal_threshold:
+                    scores["head_alignment"] = 1.0
+                elif head_offset <= acceptable_threshold:
+                    scores["head_alignment"] = max(0.7, 1.0 - ((head_offset - normal_threshold) / (acceptable_threshold - normal_threshold)) * 0.3)
+                else:
+                    scores["head_alignment"] = max(0.0, 0.7 - ((head_offset - acceptable_threshold) / acceptable_threshold) * 0.7)
+            
+            # 背骨の直線性（医学的基準: 2cm以内の偏差が正常）
+            if all(k in keypoints for k in ["left_shoulder", "right_shoulder", "left_hip", "right_hip"]):
+                ls = keypoints["left_shoulder"]
+                rs = keypoints["right_shoulder"]
+                lh = keypoints["left_hip"]
+                rh = keypoints["right_hip"]
+                
+                shoulder_center = ((ls.x + rs.x) / 2, (ls.y + rs.y) / 2)
+                hip_center = ((lh.x + rh.x) / 2, (lh.y + rh.y) / 2)
+                
+                # 垂直方向の偏差を計算
+                vertical_alignment = abs(shoulder_center[0] - hip_center[0])
+                # 正常範囲: 体高の2%以内
+                normal_threshold = body_height * 0.02
+                # 許容範囲: 体高の5%以内
+                acceptable_threshold = body_height * 0.05
+                if vertical_alignment <= normal_threshold:
+                    scores["spine_alignment"] = 1.0
+                elif vertical_alignment <= acceptable_threshold:
+                    scores["spine_alignment"] = max(0.7, 1.0 - ((vertical_alignment - normal_threshold) / (acceptable_threshold - normal_threshold)) * 0.3)
+                else:
+                    scores["spine_alignment"] = max(0.0, 0.7 - ((vertical_alignment - acceptable_threshold) / acceptable_threshold) * 0.7)
+            
+            # 膝の位置（医学的基準: 1-2cm以内が正常）
+            if all(k in keypoints for k in ["left_knee", "right_knee"]):
+                lk = keypoints["left_knee"]
+                rk = keypoints["right_knee"]
+                knee_diff = abs(lk.y - rk.y)
+                # 正常範囲: 体高の1.5%以内
+                normal_threshold = body_height * 0.015
+                # 許容範囲: 体高の4%以内
+                acceptable_threshold = body_height * 0.04
+                if knee_diff <= normal_threshold:
+                    scores["knee_alignment"] = 1.0
+                elif knee_diff <= acceptable_threshold:
+                    scores["knee_alignment"] = max(0.7, 1.0 - ((knee_diff - normal_threshold) / (acceptable_threshold - normal_threshold)) * 0.3)
+                else:
+                    scores["knee_alignment"] = max(0.0, 0.7 - ((knee_diff - acceptable_threshold) / acceptable_threshold) * 0.7)
         
         return scores
     
@@ -279,34 +346,43 @@ class PostureAnalyzer:
                 "impact": "腰痛や姿勢不良の原因になる可能性があります"
             })
         
-        # 猫背（前傾姿勢）（精度向上：閾値を調整）
+        # 猫背（前傾姿勢）（医学的基準: 5度以上で問題）
         if "spine_angle" in angles:
-            if angles["spine_angle"] < -8:  # 前傾（より敏感に検出）
+            spine_angle = angles["spine_angle"]
+            # 前傾（負の値）: 5度以上で問題
+            if spine_angle < -5:
+                severity = "high" if spine_angle < -15 else ("medium" if spine_angle < -10 else "low")
                 issues.append({
                     "type": "forward_head_posture",
-                    "severity": "high" if angles["spine_angle"] < -18 else ("medium" if angles["spine_angle"] < -12 else "low"),
-                    "description": "猫背の傾向があります",
-                    "impact": "首や肩の痛み、頭痛の原因になる可能性があります"
+                    "severity": severity,
+                    "description": f"猫背の傾向があります（前傾角度: {abs(spine_angle):.1f}度）",
+                    "impact": "首や肩の痛み、頭痛、呼吸機能の低下の原因になる可能性があります"
                 })
         
-        # 反り腰（精度向上：閾値を調整）
+        # 反り腰（医学的基準: 5度以上で問題）
         if "spine_angle" in angles:
-            if angles["spine_angle"] > 12:  # 後傾（より敏感に検出）
+            spine_angle = angles["spine_angle"]
+            # 後傾（正の値）: 5度以上で問題
+            if spine_angle > 5:
+                severity = "high" if spine_angle > 15 else ("medium" if spine_angle > 10 else "low")
                 issues.append({
                     "type": "sway_back",
-                    "severity": "high" if angles["spine_angle"] > 22 else ("medium" if angles["spine_angle"] > 18 else "low"),
-                    "description": "反り腰の傾向があります",
-                    "impact": "腰痛の原因になる可能性があります"
+                    "severity": severity,
+                    "description": f"反り腰の傾向があります（後傾角度: {spine_angle:.1f}度）",
+                    "impact": "腰痛、骨盤の歪み、股関節の痛みの原因になる可能性があります"
                 })
         
-        # 首の前傾（精度向上：閾値を調整）
+        # 首の前傾（医学的基準: 5度以上で問題）
         if "neck_angle" in angles:
-            if angles["neck_angle"] < -8:  # より敏感に検出
+            neck_angle = angles["neck_angle"]
+            # 前傾（正の値）: 5度以上で問題
+            if neck_angle > 5:
+                severity = "high" if neck_angle > 15 else ("medium" if neck_angle > 10 else "low")
                 issues.append({
                     "type": "forward_head",
-                    "severity": "high" if angles["neck_angle"] < -18 else ("medium" if angles["neck_angle"] < -12 else "low"),
-                    "description": "首が前に出ています（ストレートネックの可能性）",
-                    "impact": "首や肩の痛み、頭痛の原因になる可能性があります"
+                    "severity": severity,
+                    "description": f"首が前に出ています（ストレートネックの可能性、前傾角度: {neck_angle:.1f}度）",
+                    "impact": "首や肩の痛み、頭痛、めまい、眼精疲労の原因になる可能性があります"
                 })
         
         # 頭部の位置

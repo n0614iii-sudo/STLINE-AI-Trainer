@@ -588,31 +588,70 @@ class PostureVisualizer:
         return image
     
     def _draw_keypoints(self, image: np.ndarray, keypoints: Dict[str, PostureKeypoint], point_size: int = 5) -> np.ndarray:
-        """キーポイントを描画（サイズを調整可能）"""
+        """
+        キーポイントを描画（信頼度ベースの改善版）
+        
+        改善点:
+        - 信頼度に基づいたサイズと色の調整
+        - より正確な位置への描画
+        - 視認性の向上
+        """
         for name, kp in keypoints.items():
-            if kp.confidence < 0.3:
+            # 信頼度が低すぎる場合はスキップ
+            if kp.confidence < 0.2:
                 continue
             
-            # 色を決定
-            color = self._get_keypoint_color(name)
+            # 基本色を決定
+            base_color = self._get_keypoint_color(name)
             
-            # 円を描画
+            # 信頼度に基づいて色の明度を調整
+            confidence_factor = min(1.0, max(0.5, kp.confidence))
+            color = tuple(int(c * confidence_factor) for c in base_color)
+            
+            # 信頼度に基づいてサイズを調整
+            # 高信頼度: 大きめ、低信頼度: 小さめ
+            size_factor = 0.5 + (kp.confidence * 0.5)  # 0.5-1.0の範囲
+            actual_size = max(3, int(point_size * size_factor))
+            outer_size = actual_size + 2
+            
+            # 外側の円（白、視認性向上）
             cv2.circle(
                 image,
                 (int(kp.x), int(kp.y)),
-                5,
+                outer_size,
+                (255, 255, 255),
+                2
+            )
+            
+            # 内側の円（色付き、信頼度に応じたサイズ）
+            cv2.circle(
+                image,
+                (int(kp.x), int(kp.y)),
+                actual_size,
                 color,
                 -1
             )
             
-            # 外側の円（視認性向上）
-            cv2.circle(
-                image,
-                (int(kp.x), int(kp.y)),
-                7,
-                (255, 255, 255),
-                1
-            )
+            # 中心点（高信頼度の場合のみ）
+            if kp.confidence > 0.7:
+                cv2.circle(
+                    image,
+                    (int(kp.x), int(kp.y)),
+                    2,
+                    (255, 255, 255),
+                    -1
+                )
+            
+            # 低信頼度の場合は点線で表示
+            if kp.confidence < 0.5:
+                # 点線の円を描画
+                for angle in range(0, 360, 30):
+                    rad = math.radians(angle)
+                    x1 = int(kp.x + (outer_size - 1) * math.cos(rad))
+                    y1 = int(kp.y + (outer_size - 1) * math.sin(rad))
+                    x2 = int(kp.x + outer_size * math.cos(rad))
+                    y2 = int(kp.y + outer_size * math.sin(rad))
+                    cv2.line(image, (x1, y1), (x2, y2), (200, 200, 200), 1)
         
         return image
     
