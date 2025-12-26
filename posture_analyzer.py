@@ -291,9 +291,17 @@ class PostureAnalyzer:
                 if "left_ear" in keypoints and "right_ear" in keypoints:
                     le = keypoints["left_ear"]
                     re = keypoints["right_ear"]
-                    if le.confidence > 0.3 and re.confidence > 0.3:
-                        head_center_x = (le.x + re.x) / 2
-                        head_center_y = (le.y + re.y) / 2
+                    # PostureKeypointオブジェクトかタプルかを確認
+                    le_conf = le.confidence if hasattr(le, 'confidence') else (le[2] if isinstance(le, (list, tuple)) and len(le) >= 3 else 0.0)
+                    re_conf = re.confidence if hasattr(re, 'confidence') else (re[2] if isinstance(re, (list, tuple)) and len(re) >= 3 else 0.0)
+                    
+                    if le_conf > 0.3 and re_conf > 0.3:
+                        le_x = le.x if hasattr(le, 'x') else (le[0] if isinstance(le, (list, tuple)) else 0.0)
+                        le_y = le.y if hasattr(le, 'y') else (le[1] if isinstance(le, (list, tuple)) else 0.0)
+                        re_x = re.x if hasattr(re, 'x') else (re[0] if isinstance(re, (list, tuple)) else 0.0)
+                        re_y = re.y if hasattr(re, 'y') else (re[1] if isinstance(re, (list, tuple)) else 0.0)
+                        head_center_x = (le_x + re_x) / 2
+                        head_center_y = (le_y + re_y) / 2
                 
                 # 耳がない場合は、目と鼻の中心を使用
                 if head_center_x is None:
