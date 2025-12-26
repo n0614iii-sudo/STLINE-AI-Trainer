@@ -449,8 +449,10 @@ def api_posture_analyze():
             response["report_image_url"] = report_image_url
         if visualized_image_url:
             response["visualized_image_url"] = visualized_image_url
+        if xray_image_url:
+            response["xray_image_url"] = xray_image_url
         
-        logger.info(f"姿勢分析レスポンス: report_image_url={report_image_url}, visualized_image_url={visualized_image_url}")
+        logger.info(f"姿勢分析レスポンス: report_image_url={report_image_url}, visualized_image_url={visualized_image_url}, xray_image_url={xray_image_url}")
         
         return jsonify(response)
     
@@ -666,8 +668,10 @@ def analyze_image_posture(image_path, user_id, posture_type):
             result["visualized_image_url"] = visualized_image_url
         if report_image_url:
             result["report_image_url"] = report_image_url
+        if xray_image_url:
+            result["xray_image_url"] = xray_image_url
         
-        logger.info(f"analyze_image_posture結果: visualized_image_url={visualized_image_url}, report_image_url={report_image_url}")
+        logger.info(f"analyze_image_posture結果: visualized_image_url={visualized_image_url}, report_image_url={report_image_url}, xray_image_url={xray_image_url}")
         
         return result
     

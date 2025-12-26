@@ -41,12 +41,19 @@
                 </div>
                 
                 <div class="mt-3">
-                    <label class="form-label text-white">姿勢タイプ</label>
+                    <label class="form-label text-white"><i class="fas fa-user-md me-2"></i> 姿勢タイプ</label>
                     <select class="form-select bg-dark text-white border-secondary" id="postureType">
-                        <option value="standing">立位</option>
+                        <option value="auto">自動判定（推奨）</option>
+                        <option value="standing_front">立位（正面）</option>
+                        <option value="standing_side">立位（横向き）</option>
+                        <option value="standing_back">立位（背面）</option>
                         <option value="sitting">座位</option>
                         <option value="walking">歩行中</option>
                     </select>
+                    <small class="text-white-50 mt-1 d-block">
+                        <i class="fas fa-info-circle me-1"></i>
+                        自動判定を選択すると、AIが写真から姿勢タイプを自動で判定します
+                    </small>
                 </div>
                 
                 <!-- 写真撮影ガイドライン -->
@@ -403,7 +410,8 @@
             if (data.status === 'success' && showResult) {
                 console.log('診断結果レポート画像URL:', data.report_image_url);
                 console.log('可視化画像URL:', data.visualized_image_url);
-                displayAnalysisResult(data.analysis, data.visualized_image_url, data.report_image_url);
+                console.log('X線透視風画像URL:', data.xray_image_url);
+                displayAnalysisResult(data.analysis, data.visualized_image_url, data.report_image_url, data.xray_image_url);
             } else if (data.status === 'error') {
                 console.error('姿勢分析エラー:', data.message);
                 alert('姿勢分析に失敗しました: ' + data.message);
@@ -754,7 +762,7 @@
                         // 分析結果を表示
                         if (response.analysis) {
                             setTimeout(() => {
-                                displayAnalysisResult(response.analysis, response.visualized_image_url, response.report_image_url);
+                                displayAnalysisResult(response.analysis, response.visualized_image_url, response.report_image_url, response.xray_image_url);
                                 if (uploadProgress) uploadProgress.style.display = 'none';
                                 if (uploadStatus) uploadStatus.textContent = '完了！';
                             }, 500);

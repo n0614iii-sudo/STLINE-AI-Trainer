@@ -896,4 +896,197 @@ class PostureVisualizer:
             return (0, 165, 255)  # オレンジ
         else:
             return (255, 255, 0)  # 黄色
+    
+    def create_xray_visualization(
+        self,
+        image: np.ndarray,
+        keypoints: Dict[str, Tuple[float, float, float]],
+        analysis: PostureAnalysis
+    ) -> np.ndarray:
+        """
+        X線透視風の画像診断を生成
+        
+        Args:
+            image: 入力画像（BGR形式）
+            keypoints: キーポイント辞書 {name: (x, y, confidence)}
+            analysis: 姿勢分析結果
+        
+        Returns:
+            X線透視風の画像
+        """
+        # 画像をコピー
+        xray_image = image.copy()
+        
+        # 画像が空でないことを確認
+        if xray_image is None or xray_image.size == 0:
+            logger.warning("空の画像が渡されました")
+            return xray_image
+        
+        h, w = xray_image.shape[:2]
+        
+        # 背景を暗くする（X線風）
+        overlay = xray_image.copy()
+        cv2.rectangle(overlay, (0, 0), (w, h), (0, 0, 0), -1)
+        cv2.addWeighted(overlay, 0.7, xray_image, 0.3, 0, xray_image)
+        
+        # キーポイントを正規化
+        normalized_keypoints = self._normalize_keypoints(keypoints)
+        
+        # 骨格を描画（太く、明るく、X線風）
+        xray_image = self._draw_skeleton_xray(xray_image, normalized_keypoints)
+        
+        # キーポイントを描画（大きく、明るく、X線風）
+        xray_image = self._draw_keypoints_xray(xray_image, normalized_keypoints)
+        
+        # アライメント線を描画（明るく）
+        xray_image = self._draw_alignment_lines_xray(xray_image, normalized_keypoints, analysis)
+        
+        # タイトルを追加
+        title_text = "X線透視風 姿勢診断"
+        title_size = 30
+        title_width, title_height = self._get_text_size_japanese(title_text, title_size)
+        title_x = (w - title_width) // 2
+        title_y = 40
+        
+        # タイトルの背景
+        cv2.rectangle(xray_image,
+                     (title_x - 15, title_y - title_height - 10),
+                     (title_x + title_width + 15, title_y + 10),
+                     (0, 0, 0), -1)
+        cv2.rectangle(xray_image,
+                     (title_x - 15, title_y - title_height - 10),
+                     (title_x + title_width + 15, title_y + 10),
+                     (255, 255, 255), 2)
+        
+        xray_image = self._put_japanese_text(xray_image, title_text, (title_x, title_y),
+                                            font_size=title_size, color=(255, 255, 255), thickness=3)
+        
+        return xray_image
+    
+    def _draw_skeleton_xray(self, image: np.ndarray, keypoints: Dict[str, PostureKeypoint]) -> np.ndarray:
+        """X線風の骨格を描画（明るく、太く）"""
+        for start_name, end_name in self.SKELETON_CONNECTIONS:
+            if start_name in keypoints and end_name in keypoints:
+                start = keypoints[start_name]
+                end = keypoints[end_name]
+                
+                # 信頼度が低い場合はスキップ
+                if start.confidence < 0.3 or end.confidence < 0.3:
+                    continue
+                
+                # X線風の色（明るい白/シアン）
+                color = (255, 255, 255)  # 白
+                
+                # 太い線を描画
+                cv2.line(
+                    image,
+                    (int(start.x), int(start.y)),
+                    (int(end.x), int(end.y)),
+                    color,
+                    4
+                )
+                
+                # 外側にグロー効果（薄い線）
+                cv2.line(
+                    image,
+                    (int(start.x), int(start.y)),
+                    (int(end.x), int(end.y)),
+                    (200, 255, 255),  # 薄いシアン
+                    2
+                )
+        
+        return image
+    
+    def _draw_keypoints_xray(self, image: np.ndarray, keypoints: Dict[str, PostureKeypoint]) -> np.ndarray:
+        """X線風のキーポイントを描画（大きく、明るく）"""
+        for name, kp in keypoints.items():
+            if kp.confidence < 0.3:
+                continue
+            
+            # X線風の色（明るい白）
+            color = (255, 255, 255)
+            
+            # 大きな円を描画（外側）
+            cv2.circle(
+                image,
+                (int(kp.x), int(kp.y)),
+                12,
+                (200, 255, 255),  # 薄いシアン
+                -1
+            )
+            
+            # 内側の円（明るい白）
+            cv2.circle(
+                image,
+                (int(kp.x), int(kp.y)),
+                8,
+                color,
+                -1
+            )
+            
+            # 中心点
+            cv2.circle(
+                image,
+                (int(kp.x), int(kp.y)),
+                3,
+                (0, 255, 255),  # シアン
+                -1
+            )
+        
+        return image
+    
+    def _draw_alignment_lines_xray(self, image: np.ndarray, keypoints: Dict[str, PostureKeypoint], analysis: PostureAnalysis) -> np.ndarray:
+        """X線風のアライメント線を描画（明るく）"""
+        h, w = image.shape[:2]
+        
+        # 肩の水平線
+        if "left_shoulder" in keypoints and "right_shoulder" in keypoints:
+            ls = keypoints["left_shoulder"]
+            rs = keypoints["right_shoulder"]
+            if ls.confidence > 0.3 and rs.confidence > 0.3:
+                y_shoulder = int((ls.y + rs.y) / 2)
+                color = (0, 255, 255)  # シアン
+                cv2.line(image, (0, y_shoulder), (w, y_shoulder), color, 2)
+                # ラベル
+                label = "肩"
+                image = self._put_japanese_text(image, label, (10, y_shoulder - 5),
+                                              font_size=16, color=color, thickness=2)
+        
+        # 骨盤の水平線
+        if "left_hip" in keypoints and "right_hip" in keypoints:
+            lh = keypoints["left_hip"]
+            rh = keypoints["right_hip"]
+            if lh.confidence > 0.3 and rh.confidence > 0.3:
+                y_hip = int((lh.y + rh.y) / 2)
+                color = (0, 255, 255)  # シアン
+                cv2.line(image, (0, y_hip), (w, y_hip), color, 2)
+                # ラベル
+                label = "骨盤"
+                image = self._put_japanese_text(image, label, (10, y_hip - 5),
+                                              font_size=16, color=color, thickness=2)
+        
+        # 背骨の垂直線
+        if "left_shoulder" in keypoints and "right_shoulder" in keypoints and \
+           "left_hip" in keypoints and "right_hip" in keypoints:
+            ls = keypoints["left_shoulder"]
+            rs = keypoints["right_shoulder"]
+            lh = keypoints["left_hip"]
+            rh = keypoints["right_hip"]
+            
+            if all(kp.confidence > 0.3 for kp in [ls, rs, lh, rh]):
+                shoulder_center_x = int((ls.x + rs.x) / 2)
+                hip_center_x = int((lh.x + rh.x) / 2)
+                spine_y_top = int(min(ls.y, rs.y))
+                spine_y_bottom = int(max(lh.y, rh.y))
+                
+                # 背骨の中心線
+                spine_center_x = int((shoulder_center_x + hip_center_x) / 2)
+                color = (0, 255, 255)  # シアン
+                cv2.line(image, (spine_center_x, spine_y_top), (spine_center_x, spine_y_bottom), color, 2)
+                # ラベル
+                label = "背骨"
+                image = self._put_japanese_text(image, label, (spine_center_x + 5, spine_y_top + 15),
+                                              font_size=16, color=color, thickness=2)
+        
+        return image
 
