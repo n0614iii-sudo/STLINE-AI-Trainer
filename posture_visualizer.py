@@ -703,7 +703,7 @@ class PostureVisualizer:
                 cv2.putText(image, "Spine", (spine_center_x + 5, spine_y_top + 15), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
         
-        # 頭部の位置（改善: 耳の中心を使用）
+        # 頭部の位置（耳の位置を使用）
         if "left_shoulder" in keypoints and "right_shoulder" in keypoints:
             ls = keypoints["left_shoulder"]
             rs = keypoints["right_shoulder"]
@@ -711,39 +711,35 @@ class PostureVisualizer:
                 shoulder_center_x = int((ls.x + rs.x) / 2)
                 shoulder_center_y = int((ls.y + rs.y) / 2)
                 
-                # 耳の中心を計算（より正確な頭部の中心位置）
+                # 耳の中心を計算（耳の位置を優先的に使用）
                 head_center_x = None
                 head_center_y = None
                 
-                # 耳が検出されている場合は耳の中心を使用
+                # 耳が検出されている場合は耳の中心を使用（必須）
                 if "left_ear" in keypoints and "right_ear" in keypoints:
                     le = keypoints["left_ear"]
                     re = keypoints["right_ear"]
-                    if le.confidence > 0.3 and re.confidence > 0.3:
+                    if le.confidence > 0.2 and re.confidence > 0.2:
                         head_center_x = int((le.x + re.x) / 2)
                         head_center_y = int((le.y + re.y) / 2)
                 
-                # 耳がない場合は、目と鼻の中心を使用
-                if head_center_x is None:
-                    head_points = []
-                    if "left_eye" in keypoints and keypoints["left_eye"].confidence > 0.3:
-                        head_points.append(keypoints["left_eye"])
-                    if "right_eye" in keypoints and keypoints["right_eye"].confidence > 0.3:
-                        head_points.append(keypoints["right_eye"])
-                    if "nose" in keypoints and keypoints["nose"].confidence > 0.3:
-                        head_points.append(keypoints["nose"])
-                    
-                    if len(head_points) >= 2:
-                        head_center_x = int(sum(p.x for p in head_points) / len(head_points))
-                        head_center_y = int(sum(p.y for p in head_points) / len(head_points))
-                    elif len(head_points) == 1:
-                        head_center_x = int(head_points[0].x)
-                        head_center_y = int(head_points[0].y)
+                # 片方の耳のみ検出されている場合も使用
+                elif "left_ear" in keypoints:
+                    le = keypoints["left_ear"]
+                    if le.confidence > 0.2:
+                        head_center_x = int(le.x)
+                        head_center_y = int(le.y)
                 
-                # 頭部の中心が取得できた場合のみ描画
+                elif "right_ear" in keypoints:
+                    re = keypoints["right_ear"]
+                    if re.confidence > 0.2:
+                        head_center_x = int(re.x)
+                        head_center_y = int(re.y)
+                
+                # 頭部の中心（耳の位置）が取得できた場合のみ描画
                 if head_center_x is not None and head_center_y is not None:
                     color = self._get_alignment_color(analysis.alignment_scores.get("head_alignment", 0.5))
-                    # 肩の中心から頭部の中心への線を描画
+                    # 肩の中心から頭部の中心（耳の位置）への線を描画
                     cv2.line(image, (shoulder_center_x, shoulder_center_y), (head_center_x, head_center_y), color, 2)
         
         return image

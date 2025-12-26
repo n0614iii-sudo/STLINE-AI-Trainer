@@ -276,18 +276,18 @@ class PostureAnalyzer:
                     scores["hip_alignment"] = max(0.0, 0.7 - ((hip_diff - acceptable_threshold) / acceptable_threshold) * 0.7)
             
             # 頭部の位置（肩の中心との関係、医学的基準: 2cm以内が正常）
-            # 改善: 耳の中心を使用（より正確な頭部の中心位置）
+            # 耳の位置を使用（より正確な頭部の中心位置）
             if all(k in keypoints for k in ["left_shoulder", "right_shoulder"]):
                 ls = keypoints["left_shoulder"]
                 rs = keypoints["right_shoulder"]
                 shoulder_center_x = (ls.x + rs.x) / 2
                 shoulder_center_y = (ls.y + rs.y) / 2
                 
-                # 耳の中心を計算（より正確な頭部の中心位置）
+                # 耳の中心を計算（耳の位置を優先的に使用）
                 head_center_x = None
                 head_center_y = None
                 
-                # 耳が検出されている場合は耳の中心を使用
+                # 耳が検出されている場合は耳の中心を使用（必須）
                 if "left_ear" in keypoints and "right_ear" in keypoints:
                     le = keypoints["left_ear"]
                     re = keypoints["right_ear"]
@@ -295,7 +295,8 @@ class PostureAnalyzer:
                     le_conf = le.confidence if hasattr(le, 'confidence') else (le[2] if isinstance(le, (list, tuple)) and len(le) >= 3 else 0.0)
                     re_conf = re.confidence if hasattr(re, 'confidence') else (re[2] if isinstance(re, (list, tuple)) and len(re) >= 3 else 0.0)
                     
-                    if le_conf > 0.3 and re_conf > 0.3:
+                    # 信頼度が0.2以上であれば使用（より低い閾値で耳を優先）
+                    if le_conf > 0.2 and re_conf > 0.2:
                         le_x = le.x if hasattr(le, 'x') else (le[0] if isinstance(le, (list, tuple)) else 0.0)
                         le_y = le.y if hasattr(le, 'y') else (le[1] if isinstance(le, (list, tuple)) else 0.0)
                         re_x = re.x if hasattr(re, 'x') else (re[0] if isinstance(re, (list, tuple)) else 0.0)
@@ -303,39 +304,26 @@ class PostureAnalyzer:
                         head_center_x = (le_x + re_x) / 2
                         head_center_y = (le_y + re_y) / 2
                 
-                # 耳がない場合は、目と鼻の中心を使用
-                if head_center_x is None:
-                    head_points = []
-                    for kp_name in ["left_eye", "right_eye", "nose"]:
-                        if kp_name in keypoints:
-                            kp = keypoints[kp_name]
-                            kp_conf = kp.confidence if hasattr(kp, 'confidence') else (kp[2] if isinstance(kp, (list, tuple)) and len(kp) >= 3 else 0.0)
-                            if kp_conf > 0.3:
-                                head_points.append(kp)
-                    
-                    if len(head_points) >= 2:
-                        # PostureKeypointオブジェクトかタプルかを確認して座標を取得
-                        x_coords = []
-                        y_coords = []
-                        for p in head_points:
-                            if hasattr(p, 'x'):
-                                x_coords.append(p.x)
-                                y_coords.append(p.y)
-                            elif isinstance(p, (list, tuple)) and len(p) >= 2:
-                                x_coords.append(float(p[0]))
-                                y_coords.append(float(p[1]))
-                        
-                        if len(x_coords) >= 2:
-                            head_center_x = sum(x_coords) / len(x_coords)
-                            head_center_y = sum(y_coords) / len(y_coords)
-                    elif len(head_points) == 1:
-                        p = head_points[0]
-                        if hasattr(p, 'x'):
-                            head_center_x = p.x
-                            head_center_y = p.y
-                        elif isinstance(p, (list, tuple)) and len(p) >= 2:
-                            head_center_x = float(p[0])
-                            head_center_y = float(p[1])
+                # 片方の耳のみ検出されている場合も使用
+                elif "left_ear" in keypoints:
+                    le = keypoints["left_ear"]
+                    le_conf = le.confidence if hasattr(le, 'confidence') else (le[2] if isinstance(le, (list, tuple)) and len(le) >= 3 else 0.0)
+                    if le_conf > 0.2:
+                        le_x = le.x if hasattr(le, 'x') else (le[0] if isinstance(le, (list, tuple)) else 0.0)
+                        le_y = le.y if hasattr(le, 'y') else (le[1] if isinstance(le, (list, tuple)) else 0.0)
+                        # 左耳の位置を頭部の中心として使用（右耳がない場合は左耳の位置を基準に右側を推定）
+                        head_center_x = le_x
+                        head_center_y = le_y
+                
+                elif "right_ear" in keypoints:
+                    re = keypoints["right_ear"]
+                    re_conf = re.confidence if hasattr(re, 'confidence') else (re[2] if isinstance(re, (list, tuple)) and len(re) >= 3 else 0.0)
+                    if re_conf > 0.2:
+                        re_x = re.x if hasattr(re, 'x') else (re[0] if isinstance(re, (list, tuple)) else 0.0)
+                        re_y = re.y if hasattr(re, 'y') else (re[1] if isinstance(re, (list, tuple)) else 0.0)
+                        # 右耳の位置を頭部の中心として使用
+                        head_center_x = re_x
+                        head_center_y = re_y
                 
                 # 頭部の中心が取得できた場合のみ評価
                 if head_center_x is not None and head_center_y is not None and body_height > 0:
