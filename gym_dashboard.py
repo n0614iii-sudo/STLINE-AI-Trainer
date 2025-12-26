@@ -66,6 +66,9 @@ posture_detector = None
 # 姿勢可視化器インスタンス
 posture_visualizer = PostureVisualizer()
 
+# 姿勢タイプ自動判定器インスタンス
+posture_type_detector = PostureTypeDetector()
+
 def get_posture_detector():
     """姿勢検出器を取得（遅延初期化）"""
     global posture_detector
@@ -359,9 +362,13 @@ def api_posture_analyze():
         
         # 姿勢タイプが指定されていない場合、または'auto'の場合、自動判定
         if not posture_type or posture_type == 'auto' or posture_type == 'standing':
-            detected_type, confidence = posture_type_detector.get_posture_type_confidence(keypoints_tuple)
-            posture_type = detected_type
-            logger.info(f"姿勢タイプを自動判定: {detected_type} (信頼度: {confidence:.2f})")
+            try:
+                detected_type, confidence = posture_type_detector.get_posture_type_confidence(keypoints_tuple)
+                posture_type = detected_type
+                logger.info(f"姿勢タイプを自動判定: {detected_type} (信頼度: {confidence:.2f})")
+            except Exception as e:
+                logger.warning(f"姿勢タイプ自動判定エラー: {e}, デフォルト値を使用")
+                posture_type = 'standing_front'
         
         # 姿勢を分析
         analysis = posture_analyzer.analyze_posture(keypoints_tuple, posture_type)
@@ -541,8 +548,11 @@ def api_posture_upload():
             return jsonify(result), 500
     
     except Exception as e:
-        logger.error(f"ファイルアップロードエラー: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        logger.error(f"ファイルアップロードエラー: {e}", exc_info=True)
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"エラー詳細:\n{error_details}")
+        return jsonify({"status": "error", "message": str(e), "details": error_details}), 500
 
 
 def analyze_image_posture(image_path, user_id, posture_type):
@@ -573,9 +583,13 @@ def analyze_image_posture(image_path, user_id, posture_type):
         
         # 姿勢タイプが指定されていない場合、自動判定
         if not posture_type or posture_type == 'auto' or posture_type == 'standing':
-            detected_type, confidence = posture_type_detector.get_posture_type_confidence(keypoints_tuple)
-            posture_type = detected_type
-            logger.info(f"姿勢タイプを自動判定: {detected_type} (信頼度: {confidence:.2f})")
+            try:
+                detected_type, confidence = posture_type_detector.get_posture_type_confidence(keypoints_tuple)
+                posture_type = detected_type
+                logger.info(f"姿勢タイプを自動判定: {detected_type} (信頼度: {confidence:.2f})")
+            except Exception as e:
+                logger.warning(f"姿勢タイプ自動判定エラー: {e}, デフォルト値を使用")
+                posture_type = 'standing_front'
         
         # 姿勢を分析
         analysis = posture_analyzer.analyze_posture(keypoints_tuple, posture_type)
@@ -636,7 +650,10 @@ def analyze_image_posture(image_path, user_id, posture_type):
         }
     
     except Exception as e:
-        logger.error(f"画像姿勢分析エラー: {e}")
+        logger.error(f"画像姿勢分析エラー: {e}", exc_info=True)
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"エラー詳細:\n{error_details}")
         return {"status": "error", "message": str(e)}
 
 
