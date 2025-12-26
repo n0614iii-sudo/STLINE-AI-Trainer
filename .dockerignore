@@ -28,9 +28,49 @@ logs/
 # ドキュメント
 *.md
 !README.md
+!QUICK_START.md
+!STLINE_README.md
 
 # その他
 .DS_Store
 *.tmp
 *.bak
+
+# テストファイル
+test_*.py
+*_test.py
+quick_test.py
+demo.py
+
+# 展開関連（不要）
+deploy_to_vps.sh
+setup_github.sh
+install_dependencies.sh
+quick_setup.sh
+START.sh
+
+# ドキュメント（一部）
+*_DEPLOYMENT.md
+*_SETUP.md
+*_GUIDE.md
+*_FIX.md
+*_SUMMARY.md
+*_STATUS.md
+*_手順*.md
+*_簡単*.md
+*_詳しく*.md
+*_ステップ*.md
+*_解決*.md
+*_デプロイ.md
+*_とは.md
+*_URL.md
+*_HERE.md
+*_USAGE.md
+*_CHECKLIST.md
+*_INVESTIGATION.md
+*_COMPLETE.md
+*_IMPLEMENTATION.md
+*_TEMPLATE.service
+railway.json
+docker-compose.yml
 
