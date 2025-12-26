@@ -325,12 +325,20 @@ def api_posture_analyze():
                     image = None
                 
                 if image is not None:
+                    # 画像のサイズをログに記録（デバッグ用）
+                    logger.info(f"受信した画像サイズ: {image.shape if image is not None else 'None'}")
+                    
                     # 姿勢検出器を使用してキーポイントを検出
                     detector = get_posture_detector()
                     if detector:
                         detected_keypoints = detector.detect_keypoints(image)
+                        logger.info(f"検出されたキーポイント数: {len(detected_keypoints) if detected_keypoints else 0}")
                         if detected_keypoints:
                             keypoints = detected_keypoints
+                            # キーポイントのサンプルをログに記録（デバッグ用）
+                            sample_keys = list(detected_keypoints.keys())[:3]
+                            for key in sample_keys:
+                                logger.info(f"キーポイント {key}: {detected_keypoints[key]}")
             except Exception as e:
                 logger.warning(f"画像からのキーポイント検出に失敗しました: {e}")
                 # フォールバック: 提供されたキーポイントを使用

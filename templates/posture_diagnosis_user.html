@@ -370,8 +370,14 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
+        // デバッグ: キャプチャした画像のサイズを確認
+        console.log('キャプチャした画像サイズ:', canvas.width, 'x', canvas.height);
+        
         // 画像をBase64にエンコード
         const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // デバッグ: 画像データのサイズを確認
+        console.log('エンコードされた画像データサイズ:', imageData.length, 'bytes');
         
         // APIに送信（画像データを送信すると、サーバー側でYOLOを使用してキーポイントを検出）
         const postureType = document.getElementById('postureType').value;
