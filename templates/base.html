@@ -502,19 +502,182 @@
             border-radius: 20px 20px 0 0;
         }
         
-        /* レスポンシブ */
-        @media (max-width: 768px) {
+        /* レスポンシブ - モバイル・タブレット対応 */
+        @media (max-width: 1200px) {
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                width: 280px;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
             .page-title-3d {
                 font-size: 2rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .page-title-3d {
+                font-size: 1.5rem;
+                letter-spacing: 1px;
             }
             
             .card-3d {
                 padding: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .stats-card-3d {
+                padding: 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .stats-card-3d .stat-icon {
+                font-size: 2rem;
+            }
+            
+            .btn-3d {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .sidebar .nav-link {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .sidebar .brand h3 {
+                font-size: 1.5rem;
+            }
+            
+            .card-3d .card-header {
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .table-glass {
+                font-size: 0.85rem;
+            }
+            
+            .table-glass th,
+            .table-glass td {
+                padding: 0.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .page-title-3d {
+                font-size: 1.25rem;
+            }
+            
+            .card-3d {
+                padding: 1rem;
+            }
+            
+            .stats-card-3d {
+                padding: 1rem;
+            }
+            
+            .stats-card-3d .h2 {
+                font-size: 1.5rem;
+            }
+            
+            .btn-3d {
+                padding: 0.6rem 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .btn-3d i {
+                font-size: 1.2rem;
+            }
+        }
+        
+        /* タブレット（iPad）対応 */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .sidebar {
+                width: 220px;
+            }
+            
+            .main-content {
+                margin-left: 220px;
+            }
+            
+            .card-3d {
+                padding: 1.75rem;
+            }
+        }
+        
+        /* モバイルメニューボタン */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        @media (max-width: 1200px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+        
+        /* タッチデバイス最適化 */
+        @media (hover: none) and (pointer: coarse) {
+            .card-3d:hover,
+            .stats-card-3d:hover,
+            .btn-3d:hover {
+                transform: none;
+            }
+            
+            .card-3d:active,
+            .stats-card-3d:active,
+            .btn-3d:active {
+                transform: scale(0.98);
+            }
+            
+            .sidebar .nav-link {
+                padding: 1.5rem;
+            }
+        }
+        
+        /* 横向きモード対応 */
+        @media (max-width: 1024px) and (orientation: landscape) {
+            .sidebar {
+                width: 200px;
+            }
+            
+            .page-title-3d {
+                font-size: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
+    <!-- モバイルメニューボタン -->
+    <button class="mobile-menu-btn" onclick="toggleSidebar()" id="mobileMenuBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+    
     <!-- パーティクル背景 -->
     <div id="particles-js"></div>
     <div class="grid-background"></div>
@@ -522,7 +685,7 @@
     <div class="container-fluid">
         <div class="row">
             <!-- サイドバー -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebar">
                 <div class="position-sticky pt-3">
                     <!-- ブランド -->
                     <div class="brand mb-4">
@@ -734,6 +897,33 @@
             });
         }
         
+        // モバイルメニューの切り替え
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const btn = document.getElementById('mobileMenuBtn');
+            sidebar.classList.toggle('show');
+            
+            if (sidebar.classList.contains('show')) {
+                btn.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                btn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        }
+        
+        // サイドバー外をクリックで閉じる
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const btn = document.getElementById('mobileMenuBtn');
+            
+            if (window.innerWidth <= 1200 && 
+                sidebar.classList.contains('show') && 
+                !sidebar.contains(e.target) && 
+                !btn.contains(e.target)) {
+                sidebar.classList.remove('show');
+                btn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        });
+        
         // ページ読み込み時のアニメーション
         document.addEventListener('DOMContentLoaded', function() {
             // ページタイトルのdata-text属性を設定
@@ -750,6 +940,17 @@
                     el.classList.add('animate-fade-in-up');
                 }, index * 100);
             });
+            
+            // モバイルでのパーティクル数を減らす（パフォーマンス向上）
+            if (window.innerWidth <= 768) {
+                if (typeof particlesJS !== 'undefined') {
+                    particlesJS('particles-js', {
+                        particles: {
+                            number: { value: 40, density: { enable: true, value_area: 800 } }
+                        }
+                    });
+                }
+            }
         });
     </script>
     

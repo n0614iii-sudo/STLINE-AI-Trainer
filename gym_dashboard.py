@@ -4,13 +4,14 @@
 Webベースの管理インターフェース
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
 import json
 import datetime
 import os
 import base64
 import numpy as np
 from pathlib import Path
+from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from personal_gym_trainer import PersonalGymTrainer, UserProfile, WorkoutSession
 from posture_analyzer import PostureAnalyzer, PostureAnalysis
@@ -22,9 +23,33 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
 
+# ファイルアップロード設定
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'avi', 'webm'}
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+
+# アップロードフォルダを作成
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'images'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'videos'), exist_ok=True)
+
 # ロガー設定
 import logging
 logger = logging.getLogger(__name__)
+
+def allowed_file(filename):
+    """許可されたファイル拡張子かチェック"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def is_video_file(filename):
+    """動画ファイルかチェック"""
+    video_extensions = {'mp4', 'mov', 'avi', 'webm'}
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in video_extensions
 
 # グローバルトレーナーインスタンス
 trainer = PersonalGymTrainer()
@@ -331,6 +356,221 @@ def api_posture_summary(user_id):
     summary = posture_analyzer.get_analysis_summary(user_id, days=days)
     
     return jsonify({"status": "success", "summary": summary})
+
+
+@app.route('/api/posture/upload', methods=['POST'])
+def api_posture_upload():
+    """動画・画像アップロードAPI"""
+    if 'file' not in request.files:
+        return jsonify({"status": "error", "message": "ファイルが選択されていません"}), 400
+    
+    file = request.files['file']
+    user_id = request.form.get('user_id')
+    posture_type = request.form.get('posture_type', 'standing')
+    
+    if not user_id:
+        return jsonify({"status": "error", "message": "user_idが必要です"}), 400
+    
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "ファイルが選択されていません"}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({"status": "error", "message": "許可されていないファイル形式です"}), 400
+    
+    try:
+        # ファイルを保存
+        filename = secure_filename(file.filename)
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        safe_filename = f"{timestamp}_{filename}"
+        
+        if is_video_file(filename):
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'videos', safe_filename)
+        else:
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'images', safe_filename)
+        
+        file.save(filepath)
+        
+        # 画像または動画から姿勢分析を実行
+        if is_video_file(filename):
+            # 動画からフレームを抽出して分析
+            result = analyze_video_posture(filepath, user_id, posture_type)
+        else:
+            # 画像から姿勢分析
+            result = analyze_image_posture(filepath, user_id, posture_type)
+        
+        if result['status'] == 'success':
+            return jsonify({
+                "status": "success",
+                "message": "姿勢分析が完了しました",
+                "file_url": f"/uploads/{'videos' if is_video_file(filename) else 'images'}/{safe_filename}",
+                "analysis": result.get('analysis')
+            })
+        else:
+            return jsonify(result), 500
+    
+    except Exception as e:
+        logger.error(f"ファイルアップロードエラー: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+def analyze_image_posture(image_path, user_id, posture_type):
+    """画像から姿勢分析"""
+    try:
+        import cv2
+        image = cv2.imread(image_path)
+        
+        if image is None:
+            return {"status": "error", "message": "画像の読み込みに失敗しました"}
+        
+        # 姿勢検出器を使用してキーポイントを検出
+        detector = get_posture_detector()
+        if not detector:
+            return {"status": "error", "message": "姿勢検出器が利用できません"}
+        
+        detected_keypoints = detector.detect_keypoints(image)
+        if not detected_keypoints:
+            return {"status": "error", "message": "姿勢が検出できませんでした"}
+        
+        # キーポイントをタプル形式に変換
+        keypoints_tuple = {}
+        for name, point in detected_keypoints.items():
+            if isinstance(point, (list, tuple)) and len(point) >= 2:
+                x, y = point[0], point[1]
+                conf = point[2] if len(point) >= 3 else 1.0
+                keypoints_tuple[name] = (float(x), float(y), float(conf))
+        
+        # 姿勢を分析
+        analysis = posture_analyzer.analyze_posture(keypoints_tuple, posture_type)
+        posture_analyzer.save_analysis(user_id, analysis)
+        
+        return {
+            "status": "success",
+            "analysis": {
+                "overall_score": analysis.overall_score,
+                "posture_type": analysis.posture_type,
+                "issues": analysis.issues,
+                "recommendations": analysis.recommendations,
+                "alignment_scores": analysis.alignment_scores,
+                "keypoint_angles": analysis.keypoint_angles,
+                "timestamp": analysis.timestamp.isoformat()
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"画像姿勢分析エラー: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+def analyze_video_posture(video_path, user_id, posture_type):
+    """動画から姿勢分析（最初のフレームと中間フレームを分析）"""
+    try:
+        import cv2
+        
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            return {"status": "error", "message": "動画の読み込みに失敗しました"}
+        
+        # 動画の情報を取得
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        
+        if total_frames == 0:
+            return {"status": "error", "message": "動画にフレームがありません"}
+        
+        # 分析するフレームを選択（最初、中間、最後）
+        frame_indices = [0, total_frames // 2, total_frames - 1]
+        analyses = []
+        
+        detector = get_posture_detector()
+        if not detector:
+            return {"status": "error", "message": "姿勢検出器が利用できません"}
+        
+        for frame_idx in frame_indices:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+            ret, frame = cap.read()
+            
+            if not ret:
+                continue
+            
+            # キーポイントを検出
+            detected_keypoints = detector.detect_keypoints(frame)
+            if not detected_keypoints:
+                continue
+            
+            # キーポイントをタプル形式に変換
+            keypoints_tuple = {}
+            for name, point in detected_keypoints.items():
+                if isinstance(point, (list, tuple)) and len(point) >= 2:
+                    x, y = point[0], point[1]
+                    conf = point[2] if len(point) >= 3 else 1.0
+                    keypoints_tuple[name] = (float(x), float(y), float(conf))
+            
+            # 姿勢を分析
+            analysis = posture_analyzer.analyze_posture(keypoints_tuple, posture_type)
+            analyses.append(analysis)
+        
+        cap.release()
+        
+        if not analyses:
+            return {"status": "error", "message": "動画から姿勢が検出できませんでした"}
+        
+        # 複数のフレームの平均を計算
+        avg_score = sum(a.overall_score for a in analyses) / len(analyses)
+        all_issues = []
+        for a in analyses:
+            all_issues.extend(a.issues)
+        
+        # ユニークな問題点を取得
+        unique_issues = {}
+        for issue in all_issues:
+            issue_type = issue['type']
+            if issue_type not in unique_issues or issue['severity'] == 'high':
+                unique_issues[issue_type] = issue
+        
+        # 推奨事項を統合
+        all_recommendations = []
+        for a in analyses:
+            all_recommendations.extend(a.recommendations)
+        unique_recommendations = list(dict.fromkeys(all_recommendations))
+        
+        # 最終分析結果を作成
+        final_analysis = PostureAnalysis(
+            timestamp=datetime.datetime.now(),
+            posture_type=posture_type,
+            overall_score=avg_score,
+            issues=list(unique_issues.values()),
+            recommendations=unique_recommendations[:5],  # 上位5件
+            keypoint_angles=analyses[0].keypoint_angles if analyses else {},
+            alignment_scores=analyses[0].alignment_scores if analyses else {},
+            detailed_metrics=analyses[0].detailed_metrics if analyses else {}
+        )
+        
+        posture_analyzer.save_analysis(user_id, final_analysis)
+        
+        return {
+            "status": "success",
+            "analysis": {
+                "overall_score": final_analysis.overall_score,
+                "posture_type": final_analysis.posture_type,
+                "issues": final_analysis.issues,
+                "recommendations": final_analysis.recommendations,
+                "alignment_scores": final_analysis.alignment_scores,
+                "keypoint_angles": final_analysis.keypoint_angles,
+                "timestamp": final_analysis.timestamp.isoformat(),
+                "frames_analyzed": len(analyses),
+                "total_frames": total_frames
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"動画姿勢分析エラー: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    """アップロードされたファイルを提供"""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
 @app.route('/api/stats')
