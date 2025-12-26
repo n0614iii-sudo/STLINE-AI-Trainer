@@ -276,22 +276,80 @@ class PostureAnalyzer:
                     scores["hip_alignment"] = max(0.0, 0.7 - ((hip_diff - acceptable_threshold) / acceptable_threshold) * 0.7)
             
             # 頭部の位置（肩の中心との関係、医学的基準: 2cm以内が正常）
-            if all(k in keypoints for k in ["nose", "left_shoulder", "right_shoulder"]):
-                nose = keypoints["nose"]
+            # 改善: 耳の中心を使用（より正確な頭部の中心位置）
+            if all(k in keypoints for k in ["left_shoulder", "right_shoulder"]):
                 ls = keypoints["left_shoulder"]
                 rs = keypoints["right_shoulder"]
                 shoulder_center_x = (ls.x + rs.x) / 2
-                head_offset = abs(nose.x - shoulder_center_x)
-                # 正常範囲: 体高の2%以内
-                normal_threshold = body_height * 0.02
-                # 許容範囲: 体高の5%以内
-                acceptable_threshold = body_height * 0.05
-                if head_offset <= normal_threshold:
-                    scores["head_alignment"] = 1.0
-                elif head_offset <= acceptable_threshold:
-                    scores["head_alignment"] = max(0.7, 1.0 - ((head_offset - normal_threshold) / (acceptable_threshold - normal_threshold)) * 0.3)
-                else:
-                    scores["head_alignment"] = max(0.0, 0.7 - ((head_offset - acceptable_threshold) / acceptable_threshold) * 0.7)
+                shoulder_center_y = (ls.y + rs.y) / 2
+                
+                # 耳の中心を計算（より正確な頭部の中心位置）
+                head_center_x = None
+                head_center_y = None
+                
+                # 耳が検出されている場合は耳の中心を使用
+                if "left_ear" in keypoints and "right_ear" in keypoints:
+                    le = keypoints["left_ear"]
+                    re = keypoints["right_ear"]
+                    if le.confidence > 0.3 and re.confidence > 0.3:
+                        head_center_x = (le.x + re.x) / 2
+                        head_center_y = (le.y + re.y) / 2
+                
+                # 耳がない場合は、目と鼻の中心を使用
+                if head_center_x is None:
+                    head_points = []
+                    if "left_eye" in keypoints and keypoints["left_eye"].confidence > 0.3:
+                        head_points.append(keypoints["left_eye"])
+                    if "right_eye" in keypoints and keypoints["right_eye"].confidence > 0.3:
+                        head_points.append(keypoints["right_eye"])
+                    if "nose" in keypoints and keypoints["nose"].confidence > 0.3:
+                        head_points.append(keypoints["nose"])
+                    
+                    if len(head_points) >= 2:
+                        head_center_x = sum(p.x for p in head_points) / len(head_points)
+                        head_center_y = sum(p.y for p in head_points) / len(head_points)
+                    elif len(head_points) == 1:
+                        head_center_x = head_points[0].x
+                        head_center_y = head_points[0].y
+                
+                # 頭部の中心が取得できた場合のみ評価
+                if head_center_x is not None and head_center_y is not None:
+                    # 左右のずれ（X方向）
+                    horizontal_offset = abs(head_center_x - shoulder_center_x)
+                    
+                    # 前後のずれ（Y方向、頭部が肩より前にある場合を検出）
+                    # 正常な頭部位置: 肩の中心より少し上（体高の約10-15%上）
+                    expected_head_y = shoulder_center_y - body_height * 0.12  # 頭部は肩より約12%上
+                    vertical_offset = abs(head_center_y - expected_head_y)
+                    
+                    # 左右のずれの評価（正常範囲: 体高の2%以内）
+                    normal_threshold_h = body_height * 0.02
+                    acceptable_threshold_h = body_height * 0.05
+                    
+                    # 前後のずれの評価（正常範囲: 体高の3%以内）
+                    normal_threshold_v = body_height * 0.03
+                    acceptable_threshold_v = body_height * 0.06
+                    
+                    # 左右と前後のずれを統合評価
+                    # より厳しい方の評価を使用
+                    score_h = 1.0
+                    if horizontal_offset <= normal_threshold_h:
+                        score_h = 1.0
+                    elif horizontal_offset <= acceptable_threshold_h:
+                        score_h = max(0.7, 1.0 - ((horizontal_offset - normal_threshold_h) / (acceptable_threshold_h - normal_threshold_h)) * 0.3)
+                    else:
+                        score_h = max(0.0, 0.7 - ((horizontal_offset - acceptable_threshold_h) / acceptable_threshold_h) * 0.7)
+                    
+                    score_v = 1.0
+                    if vertical_offset <= normal_threshold_v:
+                        score_v = 1.0
+                    elif vertical_offset <= acceptable_threshold_v:
+                        score_v = max(0.7, 1.0 - ((vertical_offset - normal_threshold_v) / (acceptable_threshold_v - normal_threshold_v)) * 0.3)
+                    else:
+                        score_v = max(0.0, 0.7 - ((vertical_offset - acceptable_threshold_v) / acceptable_threshold_v) * 0.7)
+                    
+                    # 左右と前後のスコアの平均（重み付け: 左右60%、前後40%）
+                    scores["head_alignment"] = score_h * 0.6 + score_v * 0.4
             
             # 背骨の直線性（医学的基準: 2cm以内の偏差が正常）
             if all(k in keypoints for k in ["left_shoulder", "right_shoulder", "left_hip", "right_hip"]):
