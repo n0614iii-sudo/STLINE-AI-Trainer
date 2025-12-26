@@ -427,8 +427,25 @@ def api_posture_analyze():
                 except Exception as e:
                     logger.error(f"診断結果レポート画像生成エラー: {e}", exc_info=True)
                     report_image_url = None
+                
+                # X線透視風の画像診断
+                xray_image_url = None
+                try:
+                    xray_image = posture_visualizer.create_xray_visualization(image, keypoints, analysis)
+                    xray_filename = f"xray_{user_id}_{timestamp}.png"
+                    xray_path = os.path.join(vis_dir, xray_filename)
+                    success_xray = cv2.imwrite(xray_path, xray_image)
+                    if success_xray and os.path.exists(xray_path):
+                        xray_image_url = url_for('uploaded_file', filename=f'visualizations/{xray_filename}')
+                        logger.info(f"X線透視風画像を保存: {xray_path}, URL: {xray_image_url}")
+                    else:
+                        logger.error(f"X線透視風画像の保存に失敗: {xray_path}")
+                        xray_image_url = None
+                except Exception as e:
+                    logger.error(f"X線透視風画像生成エラー: {e}", exc_info=True)
+                    xray_image_url = None
             except Exception as e:
-                logger.error(f"診断結果レポート画像生成エラー: {e}", exc_info=True)
+                logger.error(f"画像生成エラー: {e}", exc_info=True)
         
         # レスポンスを準備
         response = {
@@ -644,10 +661,29 @@ def analyze_image_posture(image_path, user_id, posture_type):
                 logger.error(f"診断結果レポート画像生成エラー: {e}", exc_info=True)
                 report_image_url = None
             
+            # X線透視風の画像診断
+            xray_image_url = None
+            try:
+                xray_image = posture_visualizer.create_xray_visualization(image, detected_keypoints, analysis)
+                xray_filename = f"xray_{timestamp}_{base_filename}.png"
+                xray_path = os.path.join(vis_dir, xray_filename)
+                success_xray = cv2.imwrite(xray_path, xray_image)
+                if success_xray and os.path.exists(xray_path):
+                    file_size_xray = os.path.getsize(xray_path)
+                    xray_image_url = url_for('uploaded_file', filename=f'visualizations/{xray_filename}')
+                    logger.info(f"X線透視風画像を保存: {xray_path}, サイズ: {file_size_xray} bytes, URL: {xray_image_url}")
+                else:
+                    logger.error(f"X線透視風画像の保存に失敗: {xray_path}")
+                    xray_image_url = None
+            except Exception as e:
+                logger.error(f"X線透視風画像生成エラー: {e}", exc_info=True)
+                xray_image_url = None
+            
         except Exception as e:
             logger.error(f"画像可視化エラー: {e}", exc_info=True)
             visualized_image_url = None
             report_image_url = None
+            xray_image_url = None
         
         result = {
             "status": "success",
