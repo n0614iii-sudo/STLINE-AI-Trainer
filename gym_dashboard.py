@@ -1044,10 +1044,11 @@ def api_stats():
 
 
 if __name__ == '__main__':
-    # 設定読み込み
-    trainer.load_config()
-    
-    print("""
+    try:
+        # 設定読み込み
+        trainer.load_config()
+        
+        print("""
 🌐 パーソナルジム管理ダッシュボード起動
 http://localhost:5000 でアクセスできます
 
@@ -1056,8 +1057,14 @@ http://localhost:5000 でアクセスできます
 - トレーニング履歴確認
 - 統計表示
 - セッション管理
+- 姿勢診断
+- PDFレポート生成
 """)
-    
-    # RailwayではPORT環境変数が自動的に設定される
-    port = int(os.getenv('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+        
+        # RailwayではPORT環境変数が自動的に設定される
+        port = int(os.getenv('PORT', 5000))
+        logger.info(f"アプリケーションを起動します: host=0.0.0.0, port={port}")
+        app.run(debug=False, host='0.0.0.0', port=port)
+    except Exception as e:
+        logger.error(f"アプリケーション起動エラー: {e}", exc_info=True)
+        raise
