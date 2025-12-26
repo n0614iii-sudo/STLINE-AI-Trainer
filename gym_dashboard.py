@@ -766,7 +766,24 @@ def analyze_video_posture(video_path, user_id, posture_type):
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     """アップロードされたファイルを提供"""
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    try:
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        # ファイルが存在するか確認
+        if not os.path.exists(file_path):
+            logger.warning(f"ファイルが見つかりません: {file_path}")
+            return "File not found", 404
+        
+        # ディレクトリトラバーサル攻撃を防ぐ
+        upload_folder_abs = os.path.abspath(app.config['UPLOAD_FOLDER'])
+        file_path_abs = os.path.abspath(file_path)
+        if not file_path_abs.startswith(upload_folder_abs):
+            logger.warning(f"不正なパスアクセス: {file_path}")
+            return "Forbidden", 403
+        
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    except Exception as e:
+        logger.error(f"ファイル提供エラー: {e}", exc_info=True)
+        return f"Error: {str(e)}", 500
 
 
 @app.route('/api/stats')
