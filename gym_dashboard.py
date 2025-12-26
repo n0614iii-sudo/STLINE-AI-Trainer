@@ -376,7 +376,8 @@ def api_posture_analyze():
                 "recommendations": analysis.recommendations,
                 "alignment_scores": analysis.alignment_scores,
                 "keypoint_angles": analysis.keypoint_angles,
-                "timestamp": analysis.timestamp.isoformat()
+                "timestamp": analysis.timestamp.isoformat(),
+                "muscle_assessment": getattr(analysis, 'muscle_assessment', {"tight_muscles": [], "stretch_needed": [], "strengthen_needed": []})
             }
         }
         
@@ -692,7 +693,8 @@ def analyze_video_posture(video_path, user_id, posture_type):
                 "keypoint_angles": final_analysis.keypoint_angles,
                 "timestamp": final_analysis.timestamp.isoformat(),
                 "frames_analyzed": len(analyses),
-                "total_frames": total_frames
+                "total_frames": total_frames,
+                "muscle_assessment": getattr(final_analysis, 'muscle_assessment', {"tight_muscles": [], "stretch_needed": [], "strengthen_needed": []})
             }
         }
         

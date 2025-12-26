@@ -749,6 +749,9 @@ class PostureAnalyzer:
         for data in user_analyses:
             analysis_dict = data["analysis"]
             analysis_dict["timestamp"] = datetime.fromisoformat(analysis_dict["timestamp"])
+            # 古いデータにmuscle_assessmentがない場合のデフォルト値
+            if "muscle_assessment" not in analysis_dict:
+                analysis_dict["muscle_assessment"] = {"tight_muscles": [], "stretch_needed": [], "strengthen_needed": []}
             analyses.append(PostureAnalysis(**analysis_dict))
         
         return analyses
