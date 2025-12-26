@@ -108,12 +108,22 @@ class PostureVisualizer:
         # 元の画像に姿勢評価を可視化
         analyzed_image = self.visualize_posture(image, keypoints, analysis)
         
-        # 診断結果パネルの高さを計算（問題点と改善提案を含む）
-        panel_height = 400
+        # 診断結果パネルの高さを計算（問題点、改善提案、筋肉評価を含む）
+        panel_height = 500
         if analysis.issues:
             panel_height += len(analysis.issues) * 50
         if analysis.recommendations:
             panel_height += len(analysis.recommendations) * 40
+        
+        # 筋肉評価の高さを追加
+        muscle_assessment = getattr(analysis, 'muscle_assessment', {})
+        if muscle_assessment:
+            if muscle_assessment.get('tight_muscles'):
+                panel_height += len(muscle_assessment['tight_muscles']) * 45
+            if muscle_assessment.get('stretch_needed'):
+                panel_height += len(muscle_assessment['stretch_needed']) * 45
+            if muscle_assessment.get('strengthen_needed'):
+                panel_height += len(muscle_assessment['strengthen_needed']) * 45
         
         # 新しい画像を作成（元の画像 + 診断結果パネル）
         report_image = np.zeros((h + panel_height, w, 3), dtype=np.uint8)
@@ -273,6 +283,172 @@ class PostureVisualizer:
                 cv2.putText(report_image, rec_text, (x_offset, y_offset), 
                            font, font_scale_rec, (200, 255, 200), thickness_rec)
                 y_offset += rec_height + 20
+        
+        y_offset += 20
+        
+        # 筋肉評価
+        muscle_assessment = getattr(analysis, 'muscle_assessment', {})
+        if muscle_assessment:
+            # 硬い可能性のある筋肉
+            if muscle_assessment.get('tight_muscles'):
+                tight_title = "硬い可能性のある筋肉"
+                font_scale_tight_title = 0.9
+                thickness_tight_title = 2
+                (tight_title_width, tight_title_height), _ = cv2.getTextSize(tight_title, font, font_scale_tight_title, thickness_tight_title)
+                
+                # タイトルの背景
+                cv2.rectangle(report_image,
+                             (x_offset - 5, y_offset - tight_title_height - 5),
+                             (x_offset + tight_title_width + 5, y_offset + 5),
+                             (60, 40, 20), -1)
+                cv2.rectangle(report_image,
+                             (x_offset - 5, y_offset - tight_title_height - 5),
+                             (x_offset + tight_title_width + 5, y_offset + 5),
+                             (255, 150, 50), 2)
+                
+                cv2.putText(report_image, tight_title, (x_offset, y_offset), 
+                           font, font_scale_tight_title, (255, 200, 150), thickness_tight_title)
+                y_offset += tight_title_height + 25
+                
+                for muscle in muscle_assessment['tight_muscles']:
+                    # 筋肉名
+                    muscle_name = muscle.get('name', '')
+                    severity = muscle.get('severity', 'medium')
+                    severity_color = self._get_severity_color(severity)
+                    font_scale_muscle = 0.7
+                    thickness_muscle = 2
+                    (muscle_width, muscle_height), _ = cv2.getTextSize(muscle_name, font, font_scale_muscle, thickness_muscle)
+                    
+                    # 背景
+                    cv2.rectangle(report_image,
+                                 (x_offset - 3, y_offset - muscle_height - 3),
+                                 (x_offset + muscle_width + 3, y_offset + 3),
+                                 (int(severity_color[0] * 0.2), int(severity_color[1] * 0.2), int(severity_color[2] * 0.2)), -1)
+                    
+                    cv2.putText(report_image, f"  • {muscle_name}", (x_offset, y_offset), 
+                               font, font_scale_muscle, severity_color, thickness_muscle)
+                    y_offset += muscle_height + 15
+                    
+                    # 理由
+                    if 'reason' in muscle:
+                        reason_text = f"    → {muscle['reason']}"
+                        font_scale_reason = 0.6
+                        thickness_reason = 1
+                        cv2.putText(report_image, reason_text, (x_offset, y_offset), 
+                                   font, font_scale_reason, (200, 200, 200), thickness_reason)
+                        y_offset += 20
+                    else:
+                        y_offset += 5
+            
+            y_offset += 15
+            
+            # ストレッチが必要な筋肉
+            if muscle_assessment.get('stretch_needed'):
+                stretch_title = "ストレッチが必要な筋肉"
+                font_scale_stretch_title = 0.9
+                thickness_stretch_title = 2
+                (stretch_title_width, stretch_title_height), _ = cv2.getTextSize(stretch_title, font, font_scale_stretch_title, thickness_stretch_title)
+                
+                # タイトルの背景
+                cv2.rectangle(report_image,
+                             (x_offset - 5, y_offset - stretch_title_height - 5),
+                             (x_offset + stretch_title_width + 5, y_offset + 5),
+                             (20, 60, 40), -1)
+                cv2.rectangle(report_image,
+                             (x_offset - 5, y_offset - stretch_title_height - 5),
+                             (x_offset + stretch_title_width + 5, y_offset + 5),
+                             (50, 200, 100), 2)
+                
+                cv2.putText(report_image, stretch_title, (x_offset, y_offset), 
+                           font, font_scale_stretch_title, (150, 255, 200), thickness_stretch_title)
+                y_offset += stretch_title_height + 25
+                
+                for stretch in muscle_assessment['stretch_needed']:
+                    muscle_name = stretch.get('muscle', '')
+                    method = stretch.get('method', '')
+                    frequency = stretch.get('frequency', '')
+                    
+                    # 筋肉名と方法
+                    stretch_text = f"  • {muscle_name}: {method}"
+                    font_scale_stretch = 0.65
+                    thickness_stretch = 2
+                    (stretch_width, stretch_height), baseline = cv2.getTextSize(stretch_text, font, font_scale_stretch, thickness_stretch)
+                    
+                    # 背景
+                    cv2.rectangle(report_image,
+                                 (x_offset - 3, y_offset - stretch_height - 3),
+                                 (x_offset + stretch_width + 3, y_offset + baseline + 3),
+                                 (15, 40, 25), -1)
+                    
+                    cv2.putText(report_image, stretch_text, (x_offset, y_offset), 
+                               font, font_scale_stretch, (150, 255, 200), thickness_stretch)
+                    y_offset += stretch_height + 15
+                    
+                    # 頻度
+                    if frequency:
+                        freq_text = f"    頻度: {frequency}"
+                        font_scale_freq = 0.6
+                        thickness_freq = 1
+                        cv2.putText(report_image, freq_text, (x_offset, y_offset), 
+                                   font, font_scale_freq, (150, 200, 150), thickness_freq)
+                        y_offset += 20
+                    else:
+                        y_offset += 5
+            
+            y_offset += 15
+            
+            # 強化が必要な筋肉
+            if muscle_assessment.get('strengthen_needed'):
+                strengthen_title = "強化が必要な筋肉"
+                font_scale_strengthen_title = 0.9
+                thickness_strengthen_title = 2
+                (strengthen_title_width, strengthen_title_height), _ = cv2.getTextSize(strengthen_title, font, font_scale_strengthen_title, thickness_strengthen_title)
+                
+                # タイトルの背景
+                cv2.rectangle(report_image,
+                             (x_offset - 5, y_offset - strengthen_title_height - 5),
+                             (x_offset + strengthen_title_width + 5, y_offset + 5),
+                             (40, 20, 60), -1)
+                cv2.rectangle(report_image,
+                             (x_offset - 5, y_offset - strengthen_title_height - 5),
+                             (x_offset + strengthen_title_width + 5, y_offset + 5),
+                             (150, 50, 200), 2)
+                
+                cv2.putText(report_image, strengthen_title, (x_offset, y_offset), 
+                           font, font_scale_strengthen_title, (200, 150, 255), thickness_strengthen_title)
+                y_offset += strengthen_title_height + 25
+                
+                for strengthen in muscle_assessment['strengthen_needed']:
+                    muscle_name = strengthen.get('muscle', '')
+                    exercise = strengthen.get('exercise', '')
+                    frequency = strengthen.get('frequency', '')
+                    
+                    # 筋肉名とエクササイズ
+                    strengthen_text = f"  • {muscle_name}: {exercise}"
+                    font_scale_strengthen = 0.65
+                    thickness_strengthen = 2
+                    (strengthen_width, strengthen_height), baseline = cv2.getTextSize(strengthen_text, font, font_scale_strengthen, thickness_strengthen)
+                    
+                    # 背景
+                    cv2.rectangle(report_image,
+                                 (x_offset - 3, y_offset - strengthen_height - 3),
+                                 (x_offset + strengthen_width + 3, y_offset + baseline + 3),
+                                 (30, 15, 40), -1)
+                    
+                    cv2.putText(report_image, strengthen_text, (x_offset, y_offset), 
+                               font, font_scale_strengthen, (200, 150, 255), thickness_strengthen)
+                    y_offset += strengthen_height + 15
+                    
+                    # 頻度
+                    if frequency:
+                        freq_text = f"    頻度: {frequency}"
+                        font_scale_freq = 0.6
+                        thickness_freq = 1
+                        cv2.putText(report_image, freq_text, (x_offset, y_offset), 
+                                   font, font_scale_freq, (200, 150, 200), thickness_freq)
+                        y_offset += 20
+                    else:
+                        y_offset += 5
         
         return report_image
     

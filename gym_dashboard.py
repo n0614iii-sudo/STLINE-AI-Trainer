@@ -650,7 +650,9 @@ def analyze_video_posture(video_path, user_id, posture_type):
                         issues=list(unique_issues.values()),
                         recommendations=unique_recommendations,
                         alignment_scores=analyses[0].alignment_scores if analyses else {},
-                        keypoint_angles=analyses[0].keypoint_angles if analyses else {}
+                        keypoint_angles=analyses[0].keypoint_angles if analyses else {},
+                        detailed_metrics=analyses[0].detailed_metrics if analyses else {},
+                        muscle_assessment=analyses[0].muscle_assessment if analyses and hasattr(analyses[0], 'muscle_assessment') else {"tight_muscles": [], "stretch_needed": [], "strengthen_needed": []}
                     )
                     
                     # 診断結果レポート画像を生成
@@ -673,7 +675,8 @@ def analyze_video_posture(video_path, user_id, posture_type):
             recommendations=unique_recommendations[:5],  # 上位5件
             keypoint_angles=analyses[0].keypoint_angles if analyses else {},
             alignment_scores=analyses[0].alignment_scores if analyses else {},
-            detailed_metrics=analyses[0].detailed_metrics if analyses else {}
+            detailed_metrics=analyses[0].detailed_metrics if analyses else {},
+            muscle_assessment=analyses[0].muscle_assessment if analyses and hasattr(analyses[0], 'muscle_assessment') else {"tight_muscles": [], "stretch_needed": [], "strengthen_needed": []}
         )
         
         posture_analyzer.save_analysis(user_id, final_analysis)

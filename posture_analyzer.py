@@ -26,13 +26,14 @@ class PostureKeypoint:
 class PostureAnalysis:
     """姿勢分析結果"""
     timestamp: datetime
-    posture_type: str  # standing, sitting, walking, etc.
+    posture_type: str  # standing_front, standing_side, standing_back, sitting, walking, etc.
     overall_score: float  # 0.0-1.0
     issues: List[Dict[str, Any]]  # 検出された問題点
     recommendations: List[str]  # 改善提案
     keypoint_angles: Dict[str, float]  # 各関節の角度
     alignment_scores: Dict[str, float]  # 各部位の整列スコア
     detailed_metrics: Dict[str, Any]  # 詳細な測定値
+    muscle_assessment: Dict[str, Any]  # 筋肉評価（硬さ、ストレッチ、強化）
 
 
 class PostureAnalyzer:
@@ -86,6 +87,9 @@ class PostureAnalyzer:
         # 詳細メトリクス
         detailed_metrics = self._calculate_detailed_metrics(normalized_keypoints, angles)
         
+        # 筋肉評価を生成
+        muscle_assessment = self._assess_muscles(issues, angles, alignment_scores, posture_type)
+        
         analysis = PostureAnalysis(
             timestamp=datetime.now(),
             posture_type=posture_type,
@@ -94,7 +98,8 @@ class PostureAnalyzer:
             recommendations=recommendations,
             keypoint_angles=angles,
             alignment_scores=alignment_scores,
-            detailed_metrics=detailed_metrics
+            detailed_metrics=detailed_metrics,
+            muscle_assessment=muscle_assessment
         )
         
         self.analysis_history.append(analysis)
@@ -420,6 +425,230 @@ class PostureAnalyzer:
         metrics["angles"] = angles.copy()
         
         return metrics
+    
+    def _assess_muscles(
+        self,
+        issues: List[Dict[str, Any]],
+        angles: Dict[str, float],
+        alignment_scores: Dict[str, float],
+        posture_type: str
+    ) -> Dict[str, Any]:
+        """
+        筋肉の硬さ、ストレッチ、強化の必要性を専門的に評価
+        
+        Returns:
+            {
+                "tight_muscles": [{"name": "筋肉名", "reason": "理由", "severity": "high/medium/low"}],
+                "stretch_needed": [{"muscle": "筋肉名", "method": "ストレッチ方法", "frequency": "頻度"}],
+                "strengthen_needed": [{"muscle": "筋肉名", "exercise": "エクササイズ", "frequency": "頻度"}]
+            }
+        """
+        tight_muscles = []
+        stretch_needed = []
+        strengthen_needed = []
+        
+        issue_types = [issue["type"] for issue in issues]
+        
+        # 猫背・前傾姿勢の場合
+        if "forward_head_posture" in issue_types or "forward_head" in issue_types:
+            tight_muscles.append({
+                "name": "胸鎖乳突筋（きょうさにゅうとつきん）",
+                "reason": "頭部が前方に突出しているため、首の前側の筋肉が短縮している可能性があります",
+                "severity": "high" if any(i["type"] in ["forward_head_posture", "forward_head"] and i["severity"] == "high" for i in issues) else "medium"
+            })
+            tight_muscles.append({
+                "name": "小胸筋（しょうきょうきん）",
+                "reason": "肩が内転し、胸が閉じているため、前胸部の筋肉が短縮しています",
+                "severity": "high" if any(i["type"] in ["forward_head_posture", "forward_head"] and i["severity"] == "high" for i in issues) else "medium"
+            })
+            tight_muscles.append({
+                "name": "上腕二頭筋（じょうわんにとうきん）",
+                "reason": "肩の内転により、上腕の前側の筋肉が短縮している可能性があります",
+                "severity": "medium"
+            })
+            
+            stretch_needed.append({
+                "muscle": "胸鎖乳突筋",
+                "method": "首を横に倒し、反対側に回旋させるストレッチ。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            stretch_needed.append({
+                "muscle": "小胸筋",
+                "method": "壁に手をついて胸を開くストレッチ（ドアウェイストレッチ）。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            stretch_needed.append({
+                "muscle": "上腕二頭筋",
+                "method": "壁に手をついて上腕を後方に引くストレッチ。30秒×3セット",
+                "frequency": "毎日1回"
+            })
+            
+            strengthen_needed.append({
+                "muscle": "深部頸部屈筋（しんぶけいぶくっきん）",
+                "exercise": "チンタック（あごを引く運動）。10回×3セット",
+                "frequency": "毎日2回"
+            })
+            strengthen_needed.append({
+                "muscle": "中・下部僧帽筋（ちゅう・かぶそうぼうきん）",
+                "exercise": "肩甲骨を寄せる運動（肩甲骨プル）。15回×3セット",
+                "frequency": "毎日2回"
+            })
+            strengthen_needed.append({
+                "muscle": "菱形筋（りょうけいきん）",
+                "exercise": "肩甲骨を寄せる運動。15回×3セット",
+                "frequency": "毎日2回"
+            })
+        
+        # 肩の高さの違い
+        if "shoulder_imbalance" in issue_types:
+            tight_muscles.append({
+                "name": "上斜方筋（じょうしゃほうきん）",
+                "reason": "片側の肩が上がっているため、その側の首から肩にかけての筋肉が過緊張しています",
+                "severity": "high" if any(i["type"] == "shoulder_imbalance" and i["severity"] == "high" for i in issues) else "medium"
+            })
+            tight_muscles.append({
+                "name": "肩甲挙筋（けんこうきょきん）",
+                "reason": "肩が上がっている側の肩甲骨を引き上げる筋肉が短縮しています",
+                "severity": "medium"
+            })
+            
+            stretch_needed.append({
+                "muscle": "上斜方筋（上がっている側）",
+                "method": "首を横に倒し、反対側に回旋させるストレッチ。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            stretch_needed.append({
+                "muscle": "肩甲挙筋（上がっている側）",
+                "method": "首を横に倒し、反対側に回旋させるストレッチ。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            
+            strengthen_needed.append({
+                "muscle": "中・下部僧帽筋（下がっている側）",
+                "exercise": "肩甲骨を下げる運動。15回×3セット",
+                "frequency": "毎日2回"
+            })
+        
+        # 骨盤の傾き
+        if "hip_imbalance" in issue_types:
+            tight_muscles.append({
+                "name": "腰方形筋（ようほうけいきん）",
+                "reason": "骨盤が傾いているため、片側の腰の筋肉が短縮しています",
+                "severity": "high" if any(i["type"] == "hip_imbalance" and i["severity"] == "high" for i in issues) else "medium"
+            })
+            tight_muscles.append({
+                "name": "腸腰筋（ちょうようきん）",
+                "reason": "骨盤の前傾により、股関節の前側の筋肉が短縮している可能性があります",
+                "severity": "medium"
+            })
+            
+            stretch_needed.append({
+                "muscle": "腰方形筋（上がっている側）",
+                "method": "横向きに寝て、上側の脚を後ろに引くストレッチ。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            stretch_needed.append({
+                "muscle": "腸腰筋",
+                "method": "ランジポジションで前脚の股関節を伸ばすストレッチ。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            
+            strengthen_needed.append({
+                "muscle": "腹横筋（ふくおうきん）",
+                "exercise": "ドローイン（お腹を引っ込める運動）。10回×3セット",
+                "frequency": "毎日2回"
+            })
+            strengthen_needed.append({
+                "muscle": "多裂筋（たれつきん）",
+                "exercise": "バードドッグ（四つん這いで対角の手足を上げる）。10回×3セット",
+                "frequency": "毎日2回"
+            })
+        
+        # 反り腰
+        if "sway_back" in issue_types:
+            tight_muscles.append({
+                "name": "腸腰筋（ちょうようきん）",
+                "reason": "骨盤が前傾しているため、股関節の前側の筋肉が短縮しています",
+                "severity": "high" if any(i["type"] == "sway_back" and i["severity"] == "high" for i in issues) else "medium"
+            })
+            tight_muscles.append({
+                "name": "大腿直筋（だいたいちょっきん）",
+                "reason": "骨盤の前傾により、太ももの前側の筋肉が短縮しています",
+                "severity": "medium"
+            })
+            tight_muscles.append({
+                "name": "腰背部伸筋群（ようはいぶしんきんぐん）",
+                "reason": "腰が反っているため、腰の後ろ側の筋肉が過緊張しています",
+                "severity": "high" if any(i["type"] == "sway_back" and i["severity"] == "high" for i in issues) else "medium"
+            })
+            
+            stretch_needed.append({
+                "muscle": "腸腰筋",
+                "method": "ランジポジションで前脚の股関節を伸ばすストレッチ。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            stretch_needed.append({
+                "muscle": "大腿直筋",
+                "method": "立位で膝を曲げ、かかとをお尻に近づけるストレッチ。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            stretch_needed.append({
+                "muscle": "腰背部伸筋群",
+                "method": "膝を抱えて丸くなるストレッチ。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            
+            strengthen_needed.append({
+                "muscle": "腹横筋（ふくおうきん）",
+                "exercise": "ドローイン（お腹を引っ込める運動）。10回×3セット",
+                "frequency": "毎日2回"
+            })
+            strengthen_needed.append({
+                "muscle": "骨盤底筋群（こつばんていきんぐん）",
+                "exercise": "ケーゲル運動（骨盤底筋を締める運動）。10回×3セット",
+                "frequency": "毎日2回"
+            })
+            strengthen_needed.append({
+                "muscle": "ハムストリングス（太もも裏）",
+                "exercise": "ヒップリフト（お尻を持ち上げる運動）。15回×3セット",
+                "frequency": "毎日2回"
+            })
+        
+        # 背骨の歪み
+        if "spine_misalignment" in issue_types:
+            tight_muscles.append({
+                "name": "多裂筋（たれつきん）",
+                "reason": "背骨が一直線上にないため、背骨を支える深部の筋肉が不均衡です",
+                "severity": "medium"
+            })
+            tight_muscles.append({
+                "name": "回旋筋（かいせんきん）",
+                "reason": "背骨の回旋により、片側の回旋筋が短縮しています",
+                "severity": "medium"
+            })
+            
+            stretch_needed.append({
+                "muscle": "多裂筋・回旋筋",
+                "method": "座位で体を回旋させるストレッチ。左右各30秒×3セット",
+                "frequency": "毎日2回"
+            })
+            
+            strengthen_needed.append({
+                "muscle": "多裂筋",
+                "exercise": "バードドッグ（四つん這いで対角の手足を上げる）。10回×3セット",
+                "frequency": "毎日2回"
+            })
+            strengthen_needed.append({
+                "muscle": "腹横筋",
+                "exercise": "プランク（体幹を一直線に保つ）。30秒×3セット",
+                "frequency": "毎日2回"
+            })
+        
+        return {
+            "tight_muscles": tight_muscles,
+            "stretch_needed": stretch_needed,
+            "strengthen_needed": strengthen_needed
+        }
     
     def get_analysis_summary(self, user_id: str, days: int = 30) -> Dict[str, Any]:
         """過去の分析結果のサマリーを取得"""

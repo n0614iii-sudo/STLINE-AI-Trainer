@@ -136,7 +136,9 @@
                 <div class="mb-3">
                     <strong>姿勢タイプ:</strong><br>
                     <span class="badge bg-info">
-                        {% if latest_analysis.posture_type == 'standing' %}立位
+                        {% if latest_analysis.posture_type == 'standing_front' %}立位（正面）
+                        {% elif latest_analysis.posture_type == 'standing_side' %}立位（横向き）
+                        {% elif latest_analysis.posture_type == 'standing_back' %}立位（背面）
                         {% elif latest_analysis.posture_type == 'sitting' %}座位
                         {% elif latest_analysis.posture_type == 'walking' %}歩行中
                         {% else %}{{ latest_analysis.posture_type }}{% endif %}
