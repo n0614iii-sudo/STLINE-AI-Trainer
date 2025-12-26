@@ -257,14 +257,10 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // ここでYOLO11-Poseを使用してキーポイントを検出
-        // 実際の実装では、YOLOモデルをロードして推論を実行
-        // 現在はダミーデータを使用
+        // 画像をBase64にエンコード
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
         
-        // ダミーキーポイントデータ（実際にはYOLOから取得）
-        const dummyKeypoints = generateDummyKeypoints();
-        
-        // APIに送信
+        // APIに送信（画像データを送信すると、サーバー側でYOLOを使用してキーポイントを検出）
         const postureType = document.getElementById('postureType').value;
         const userId = '{{ user.user_id }}';
         
@@ -276,7 +272,7 @@
                 },
                 body: JSON.stringify({
                     user_id: userId,
-                    keypoints: dummyKeypoints,
+                    image: imageData,  // 画像データを送信（サーバー側でYOLO検出）
                     posture_type: postureType
                 })
             });
@@ -285,36 +281,14 @@
             
             if (data.status === 'success' && showResult) {
                 displayAnalysisResult(data.analysis);
+            } else if (data.status === 'error') {
+                console.error('姿勢分析エラー:', data.message);
+                alert('姿勢分析に失敗しました: ' + data.message);
             }
         } catch (error) {
             console.error('姿勢分析エラー:', error);
             alert('姿勢分析に失敗しました。');
         }
-    }
-    
-    // ダミーキーポイントを生成（実際の実装ではYOLOから取得）
-    function generateDummyKeypoints() {
-        // 実際の実装では、YOLO11-Poseモデルを使用してキーポイントを検出
-        // ここではダミーデータを返す
-        return {
-            "nose": [320, 100, 0.9],
-            "left_eye": [310, 90, 0.9],
-            "right_eye": [330, 90, 0.9],
-            "left_ear": [300, 100, 0.8],
-            "right_ear": [340, 100, 0.8],
-            "left_shoulder": [280, 180, 0.9],
-            "right_shoulder": [360, 180, 0.9],
-            "left_elbow": [250, 250, 0.8],
-            "right_elbow": [390, 250, 0.8],
-            "left_wrist": [220, 320, 0.7],
-            "right_wrist": [420, 320, 0.7],
-            "left_hip": [300, 350, 0.9],
-            "right_hip": [340, 350, 0.9],
-            "left_knee": [290, 450, 0.8],
-            "right_knee": [350, 450, 0.8],
-            "left_ankle": [280, 550, 0.7],
-            "right_ankle": [370, 550, 0.7]
-        };
     }
     
     // 分析結果を表示
