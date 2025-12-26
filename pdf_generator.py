@@ -140,7 +140,7 @@ class PDFGenerator:
             fontSize=11,
             textColor=colors.HexColor('#1f2937'),
             spaceAfter=6,
-            fontName='Japanese' if 'Japanese' in pdfmetrics.getRegisteredFontNames() else 'Helvetica'
+            fontName=self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'
         )
         
         # スコアスタイル
@@ -315,16 +315,18 @@ class PDFGenerator:
                 
                 # テーブルを作成
                 table = Table(table_data, colWidths=[10*cm, 4*cm])
+                table_font_name = self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica-Bold'
                 table.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTNAME', (0, 0), (-1, 0), table_font_name),
                     ('FONTSIZE', (0, 0), (-1, 0), 12),
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                     ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
                     ('GRID', (0, 0), (-1, -1), 1, colors.grey),
                     ('FONTSIZE', (0, 1), (-1, -1), 10),
+                    ('FONTNAME', (0, 1), (-1, -1), self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'),
                 ]))
                 
                 story.append(table)
