@@ -46,6 +46,9 @@ class PDFGenerator:
     
     def __init__(self):
         """PDF生成器を初期化"""
+        if not REPORTLAB_AVAILABLE:
+            raise ImportError("reportlabがインストールされていません。pip install reportlabを実行してください。")
+        
         self.styles = getSampleStyleSheet()
         self._setup_fonts()
         self._setup_custom_styles()
