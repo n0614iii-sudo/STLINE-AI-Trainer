@@ -96,6 +96,11 @@ class PostureVisualizer:
             描画された画像
         """
         try:
+            # 画像が空でないことを確認
+            if image is None or image.size == 0:
+                logger.warning("空の画像が渡されました")
+                return image
+            
             # OpenCV画像をPIL画像に変換（BGR -> RGB）
             pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
             draw = ImageDraw.Draw(pil_image)
@@ -109,11 +114,16 @@ class PostureVisualizer:
             draw.text(position, text, font=font, fill=rgb_color)
             
             # PIL画像をOpenCV画像に変換（RGB -> BGR）
-            return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+            result = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+            return result
         except Exception as e:
+            logger.warning(f"日本語テキスト描画エラー（フォールバック）: {e}")
             # エラー時はOpenCVのデフォルトフォントで描画（英語のみ）
-            cv2.putText(image, text.encode('utf-8', 'replace').decode('utf-8', 'replace'), 
-                       position, cv2.FONT_HERSHEY_SIMPLEX, font_size / 20.0, color, thickness)
+            try:
+                cv2.putText(image, text.encode('utf-8', 'replace').decode('utf-8', 'replace'), 
+                           position, cv2.FONT_HERSHEY_SIMPLEX, font_size / 20.0, color, thickness)
+            except Exception as e2:
+                logger.error(f"テキスト描画エラー: {e2}")
             return image
     
     def _get_text_size_japanese(self, text: str, font_size: int = 20) -> Tuple[int, int]:
@@ -137,15 +147,17 @@ class PostureVisualizer:
         self,
         image: np.ndarray,
         keypoints: Dict[str, Tuple[float, float, float]],
-        analysis: PostureAnalysis
+        analysis: PostureAnalysis,
+        draw_text: bool = True
     ) -> np.ndarray:
         """
-        画像に姿勢評価を可視化
+        画像に姿勢評価を可視化（キーポイントと骨格を直接描画）
         
         Args:
             image: 入力画像（BGR形式）
             keypoints: キーポイント辞書 {name: (x, y, confidence)}
             analysis: 姿勢分析結果
+            draw_text: テキストを描画するか（デフォルト: True）
         
         Returns:
             可視化された画像
@@ -153,23 +165,30 @@ class PostureVisualizer:
         # 画像をコピー
         vis_image = image.copy()
         
+        # 画像が空でないことを確認
+        if vis_image is None or vis_image.size == 0:
+            logger.warning("空の画像が渡されました")
+            return vis_image
+        
         # キーポイントを正規化
         normalized_keypoints = self._normalize_keypoints(keypoints)
         
-        # 骨格を描画
-        vis_image = self._draw_skeleton(vis_image, normalized_keypoints)
+        # 骨格を描画（太く、見やすく）
+        vis_image = self._draw_skeleton(vis_image, normalized_keypoints, line_thickness=3)
         
-        # キーポイントを描画
-        vis_image = self._draw_keypoints(vis_image, normalized_keypoints)
+        # キーポイントを描画（大きく、見やすく）
+        vis_image = self._draw_keypoints(vis_image, normalized_keypoints, point_size=8)
         
         # アライメント線を描画
         vis_image = self._draw_alignment_lines(vis_image, normalized_keypoints, analysis)
         
-        # 評価項目を描画
-        vis_image = self._draw_evaluation_text(vis_image, analysis)
-        
-        # スコアと問題点を描画
-        vis_image = self._draw_score_and_issues(vis_image, analysis)
+        # テキストを描画する場合のみ
+        if draw_text:
+            # 評価項目を描画
+            vis_image = self._draw_evaluation_text(vis_image, analysis)
+            
+            # スコアと問題点を描画
+            vis_image = self._draw_score_and_issues(vis_image, analysis)
         
         return vis_image
     
@@ -540,8 +559,8 @@ class PostureVisualizer:
             normalized[name] = PostureKeypoint(x=x, y=y, confidence=conf, name=name)
         return normalized
     
-    def _draw_skeleton(self, image: np.ndarray, keypoints: Dict[str, PostureKeypoint]) -> np.ndarray:
-        """骨格を描画"""
+    def _draw_skeleton(self, image: np.ndarray, keypoints: Dict[str, PostureKeypoint], line_thickness: int = 2) -> np.ndarray:
+        """骨格を描画（太さを調整可能）"""
         for start_name, end_name in self.SKELETON_CONNECTIONS:
             if start_name in keypoints and end_name in keypoints:
                 start = keypoints[start_name]
@@ -565,8 +584,8 @@ class PostureVisualizer:
         
         return image
     
-    def _draw_keypoints(self, image: np.ndarray, keypoints: Dict[str, PostureKeypoint]) -> np.ndarray:
-        """キーポイントを描画"""
+    def _draw_keypoints(self, image: np.ndarray, keypoints: Dict[str, PostureKeypoint], point_size: int = 5) -> np.ndarray:
+        """キーポイントを描画（サイズを調整可能）"""
         for name, kp in keypoints.items():
             if kp.confidence < 0.3:
                 continue

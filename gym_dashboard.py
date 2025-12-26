@@ -17,6 +17,7 @@ from personal_gym_trainer import PersonalGymTrainer, UserProfile, WorkoutSession
 from posture_analyzer import PostureAnalyzer, PostureAnalysis
 from posture_detector import PostureDetector
 from posture_visualizer import PostureVisualizer
+from posture_type_detector import PostureTypeDetector
 
 # 環境変数を読み込み
 load_dotenv()
@@ -356,6 +357,12 @@ def api_posture_analyze():
                 conf = point[2] if len(point) >= 3 else 1.0
                 keypoints_tuple[name] = (float(x), float(y), float(conf))
         
+        # 姿勢タイプが指定されていない場合、または'auto'の場合、自動判定
+        if not posture_type or posture_type == 'auto' or posture_type == 'standing':
+            detected_type, confidence = posture_type_detector.get_posture_type_confidence(keypoints_tuple)
+            posture_type = detected_type
+            logger.info(f"姿勢タイプを自動判定: {detected_type} (信頼度: {confidence:.2f})")
+        
         # 姿勢を分析
         analysis = posture_analyzer.analyze_posture(keypoints_tuple, posture_type)
         
@@ -374,9 +381,9 @@ def api_posture_analyze():
                 os.makedirs(vis_dir, exist_ok=True)
                 logger.info(f"可視化ディレクトリ: {vis_dir}, 存在: {os.path.exists(vis_dir)}")
                 
-                # 通常の可視化画像も生成
+                # 通常の可視化画像も生成（キーポイントと骨格を直接描画）
                 try:
-                    visualized_image = posture_visualizer.visualize_posture(image, keypoints, analysis)
+                    visualized_image = posture_visualizer.visualize_posture(image, keypoints, analysis, draw_text=False)
                     vis_filename = f"analyzed_{user_id}_{timestamp}.png"
                     vis_path = os.path.join(vis_dir, vis_filename)
                     success1 = cv2.imwrite(vis_path, visualized_image)
