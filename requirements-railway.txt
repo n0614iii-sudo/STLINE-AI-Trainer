@@ -14,4 +14,4 @@ websockets>=11.0.0
 aiortc>=1.6.0
 av>=10.0.0
 pydub>=0.25.0
-
+reportlab>=4.0.0
