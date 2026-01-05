@@ -243,7 +243,8 @@ class PDFGenerator:
             )
             
             story.append(Paragraph(f"{score_percent}", score_style))
-            story.append(Paragraph("<b>総合姿勢スコア</b>", ParagraphStyle('ScoreLabel', parent=self.styles['Normal'], fontSize=14, alignment=TA_CENTER, spaceAfter=20)))
+            score_label_font = self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'
+            story.append(Paragraph("<b>総合姿勢スコア</b>", ParagraphStyle('ScoreLabel', parent=self.styles['Normal'], fontSize=14, alignment=TA_CENTER, spaceAfter=20, fontName=score_label_font)))
             
             story.append(Spacer(1, 0.5*cm))
             
@@ -351,14 +352,15 @@ class PDFGenerator:
                     severity_text = severity.upper()
                     severity_color = severity_colors.get(severity, colors.grey)
                     
+                    issue_font = self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'
                     story.append(Paragraph(
                         f"<b>[{severity_text}]</b> {description}",
-                        ParagraphStyle('IssueStyle', parent=self.body_style, textColor=severity_color, leftIndent=20)
+                        ParagraphStyle('IssueStyle', parent=self.body_style, textColor=severity_color, leftIndent=20, fontName=issue_font)
                     ))
                     if impact:
                         story.append(Paragraph(
                             f"<i>{impact}</i>",
-                            ParagraphStyle('ImpactStyle', parent=self.body_style, leftIndent=40, textColor=colors.HexColor('#6b7280'))
+                            ParagraphStyle('ImpactStyle', parent=self.body_style, leftIndent=40, textColor=colors.HexColor('#6b7280'), fontName=issue_font)
                         ))
                     story.append(Spacer(1, 0.2*cm))
                 
@@ -368,8 +370,9 @@ class PDFGenerator:
             recommendations = analysis.get('recommendations', [])
             if recommendations:
                 story.append(Paragraph("<b>改善提案</b>", self.heading_style))
+                rec_font = self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'
                 for rec in recommendations:
-                    story.append(Paragraph(f"• {rec}", ParagraphStyle('RecStyle', parent=self.body_style, leftIndent=20)))
+                    story.append(Paragraph(f"• {rec}", ParagraphStyle('RecStyle', parent=self.body_style, leftIndent=20, fontName=rec_font)))
                     story.append(Spacer(1, 0.2*cm))
                 story.append(Spacer(1, 0.3*cm))
             
@@ -384,14 +387,15 @@ class PDFGenerator:
                         name = muscle.get('name', '')
                         reason = muscle.get('reason', '')
                         severity = muscle.get('severity', 'medium')
+                        muscle_font = self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'
                         story.append(Paragraph(
                             f"<b>• {name}</b>",
-                            ParagraphStyle('MuscleStyle', parent=self.body_style, leftIndent=20)
+                            ParagraphStyle('MuscleStyle', parent=self.body_style, leftIndent=20, fontName=muscle_font)
                         ))
                         if reason:
                             story.append(Paragraph(
                                 f"  {reason}",
-                                ParagraphStyle('ReasonStyle', parent=self.body_style, leftIndent=40, textColor=colors.HexColor('#6b7280'))
+                                ParagraphStyle('ReasonStyle', parent=self.body_style, leftIndent=40, textColor=colors.HexColor('#6b7280'), fontName=muscle_font)
                             ))
                         story.append(Spacer(1, 0.2*cm))
                     story.append(Spacer(1, 0.3*cm))
@@ -404,14 +408,15 @@ class PDFGenerator:
                         muscle = stretch.get('muscle', '')
                         method = stretch.get('method', '')
                         frequency = stretch.get('frequency', '')
+                        stretch_font = self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'
                         story.append(Paragraph(
                             f"<b>• {muscle}</b>: {method}",
-                            ParagraphStyle('StretchStyle', parent=self.body_style, leftIndent=20)
+                            ParagraphStyle('StretchStyle', parent=self.body_style, leftIndent=20, fontName=stretch_font)
                         ))
                         if frequency:
                             story.append(Paragraph(
                                 f"  頻度: {frequency}",
-                                ParagraphStyle('FreqStyle', parent=self.body_style, leftIndent=40, textColor=colors.HexColor('#6b7280'))
+                                ParagraphStyle('FreqStyle', parent=self.body_style, leftIndent=40, textColor=colors.HexColor('#6b7280'), fontName=stretch_font)
                             ))
                         story.append(Spacer(1, 0.2*cm))
                     story.append(Spacer(1, 0.3*cm))
@@ -424,23 +429,25 @@ class PDFGenerator:
                         muscle = strengthen.get('muscle', '')
                         exercise = strengthen.get('exercise', '')
                         frequency = strengthen.get('frequency', '')
+                        strengthen_font = self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'
                         story.append(Paragraph(
                             f"<b>• {muscle}</b>: {exercise}",
-                            ParagraphStyle('StrengthenStyle', parent=self.body_style, leftIndent=20)
+                            ParagraphStyle('StrengthenStyle', parent=self.body_style, leftIndent=20, fontName=strengthen_font)
                         ))
                         if frequency:
                             story.append(Paragraph(
                                 f"  頻度: {frequency}",
-                                ParagraphStyle('FreqStyle', parent=self.body_style, leftIndent=40, textColor=colors.HexColor('#6b7280'))
+                                ParagraphStyle('FreqStyle', parent=self.body_style, leftIndent=40, textColor=colors.HexColor('#6b7280'), fontName=strengthen_font)
                             ))
                         story.append(Spacer(1, 0.2*cm))
                     story.append(Spacer(1, 0.3*cm))
             
             # フッター
             story.append(Spacer(1, 1*cm))
+            footer_font = self.japanese_font_name if self.japanese_font_name and self.japanese_font_name != 'Helvetica' else 'Helvetica'
             story.append(Paragraph(
                 f"<i>このレポートは {datetime.now().strftime('%Y年%m月%d日 %H:%M:%S')} に生成されました。</i>",
-                ParagraphStyle('FooterStyle', parent=self.styles['Normal'], fontSize=8, alignment=TA_CENTER, textColor=colors.grey)
+                ParagraphStyle('FooterStyle', parent=self.styles['Normal'], fontSize=8, alignment=TA_CENTER, textColor=colors.grey, fontName=footer_font)
             ))
             
             # PDFを生成
