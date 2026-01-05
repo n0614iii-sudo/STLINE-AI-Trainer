@@ -291,35 +291,62 @@ def posture_diagnosis():
 @app.route('/posture_diagnosis/<user_id>')
 def posture_diagnosis_user(user_id):
     """ユーザー別姿勢診断ページ"""
-    if user_id not in trainer.user_profiles:
-        return "ユーザーが見つかりません", 404
-    
-    user = trainer.user_profiles[user_id]
-    
-    # 過去の診断結果を読み込み
-    analyses = posture_analyzer.load_analyses(user_id)
-    
-    # 最新の診断結果
-    latest_analysis = analyses[-1] if analyses else None
-    
-    # 診断履歴
-    history_data = []
-    for analysis in sorted(analyses, key=lambda a: a.timestamp, reverse=True)[:10]:
-        history_data.append({
-            'date': analysis.timestamp.strftime('%Y-%m-%d %H:%M'),
-            'score': analysis.overall_score,
-            'posture_type': analysis.posture_type,
-            'issues_count': len(analysis.issues)
-        })
-    
-    # サマリー
-    summary = posture_analyzer.get_analysis_summary(user_id, days=30)
-    
-    return render_template('posture_diagnosis_user.html',
-                         user=user,
-                         latest_analysis=latest_analysis,
-                         history=history_data,
-                         summary=summary)
+    try:
+        # URLデコード（日本語文字が含まれている場合）
+        from urllib.parse import unquote
+        user_id = unquote(user_id)
+        
+        logger.info(f"姿勢診断ページにアクセス: user_id={user_id}")
+        
+        if user_id not in trainer.user_profiles:
+            logger.warning(f"ユーザーが見つかりません: {user_id}")
+            return "ユーザーが見つかりません", 404
+        
+        user = trainer.user_profiles[user_id]
+        
+        # 過去の診断結果を読み込み
+        try:
+            analyses = posture_analyzer.load_analyses(user_id)
+        except Exception as e:
+            logger.error(f"診断結果の読み込みエラー: {e}", exc_info=True)
+            analyses = []
+        
+        # 最新の診断結果
+        latest_analysis = analyses[-1] if analyses else None
+        
+        # 診断履歴
+        history_data = []
+        try:
+            for analysis in sorted(analyses, key=lambda a: a.timestamp, reverse=True)[:10]:
+                history_data.append({
+                    'date': analysis.timestamp.strftime('%Y-%m-%d %H:%M'),
+                    'score': analysis.overall_score,
+                    'posture_type': analysis.posture_type,
+                    'issues_count': len(analysis.issues)
+                })
+        except Exception as e:
+            logger.error(f"診断履歴の処理エラー: {e}", exc_info=True)
+            history_data = []
+        
+        # サマリー
+        try:
+            summary = posture_analyzer.get_analysis_summary(user_id, days=30)
+        except Exception as e:
+            logger.error(f"サマリーの取得エラー: {e}", exc_info=True)
+            summary = {
+                'total_analyses': len(analyses),
+                'average_score': 0.0,
+                'trend': 'stable'
+            }
+        
+        return render_template('posture_diagnosis_user.html',
+                             user=user,
+                             latest_analysis=latest_analysis,
+                             history=history_data,
+                             summary=summary)
+    except Exception as e:
+        logger.error(f"姿勢診断ページのエラー: {e}", exc_info=True)
+        return f"エラーが発生しました: {str(e)}", 500
 
 
 @app.route('/api/posture/analyze', methods=['POST'])
@@ -523,13 +550,20 @@ def api_posture_history(user_id):
 @app.route('/api/posture/summary/<user_id>')
 def api_posture_summary(user_id):
     """姿勢診断サマリーAPI"""
-    if user_id not in trainer.user_profiles:
-        return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
-    
-    days = request.args.get('days', 30, type=int)
-    summary = posture_analyzer.get_analysis_summary(user_id, days=days)
-    
-    return jsonify({"status": "success", "summary": summary})
+    try:
+        from urllib.parse import unquote
+        user_id = unquote(user_id)
+        
+        if user_id not in trainer.user_profiles:
+            return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
+        
+        days = request.args.get('days', 30, type=int)
+        summary = posture_analyzer.get_analysis_summary(user_id, days=days)
+        
+        return jsonify({"status": "success", "summary": summary})
+    except Exception as e:
+        logger.error(f"姿勢診断サマリーAPIエラー: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route('/api/posture/upload', methods=['POST'])
@@ -924,8 +958,15 @@ def uploaded_file(filename):
 @app.route('/api/posture/pdf/<user_id>', methods=['POST'])
 def api_generate_pdf(user_id):
     """診断結果をPDF形式で生成"""
-    if not PDF_AVAILABLE or pdf_generator is None:
-        return jsonify({"status": "error", "message": "PDF生成機能は利用できません"}), 503
+    try:
+        from urllib.parse import unquote
+        user_id = unquote(user_id)
+        
+        if not PDF_AVAILABLE or pdf_generator is None:
+            return jsonify({"status": "error", "message": "PDF生成機能は利用できません"}), 503
+    except Exception as e:
+        logger.error(f"PDF生成API（初期化）エラー: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": str(e)}), 500
     
     try:
         data = request.json
