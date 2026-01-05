@@ -529,22 +529,29 @@ def api_posture_analyze():
 @app.route('/api/posture/history/<user_id>')
 def api_posture_history(user_id):
     """姿勢診断履歴API"""
-    if user_id not in trainer.user_profiles:
-        return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
-    
-    analyses = posture_analyzer.load_analyses(user_id)
-    
-    history = []
-    for analysis in sorted(analyses, key=lambda a: a.timestamp, reverse=True):
-        history.append({
-            "timestamp": analysis.timestamp.isoformat(),
-            "overall_score": analysis.overall_score,
-            "posture_type": analysis.posture_type,
-            "issues_count": len(analysis.issues),
-            "issues": analysis.issues
-        })
-    
-    return jsonify({"status": "success", "history": history})
+    try:
+        from urllib.parse import unquote
+        user_id = unquote(user_id)
+        
+        if user_id not in trainer.user_profiles:
+            return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
+        
+        analyses = posture_analyzer.load_analyses(user_id)
+        
+        history = []
+        for analysis in sorted(analyses, key=lambda a: a.timestamp, reverse=True):
+            history.append({
+                "timestamp": analysis.timestamp.isoformat(),
+                "overall_score": analysis.overall_score,
+                "posture_type": analysis.posture_type,
+                "issues_count": len(analysis.issues),
+                "issues": analysis.issues
+            })
+        
+        return jsonify({"status": "success", "history": history})
+    except Exception as e:
+        logger.error(f"姿勢診断履歴APIエラー: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route('/api/posture/summary/<user_id>')
