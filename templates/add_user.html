@@ -282,7 +282,14 @@
     function generateUserId(name) {
         // 名前からユーザーIDを生成
         const timestamp = Date.now().toString().slice(-6);
-        const namePart = name.replace(/\s+/g, '').toLowerCase().substring(0, 5);
+        // 日本語文字を含む場合の処理
+        let namePart = name.replace(/\s+/g, '');
+        // 日本語文字が含まれている場合はそのまま使用（最大10文字）
+        if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(namePart)) {
+            namePart = namePart.substring(0, 10);
+        } else {
+            namePart = namePart.toLowerCase().substring(0, 5);
+        }
         return `user_${namePart}_${timestamp}`;
     }
     

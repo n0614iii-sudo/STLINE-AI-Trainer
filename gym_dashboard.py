@@ -300,7 +300,9 @@ def posture_diagnosis_user(user_id):
         
         if user_id not in trainer.user_profiles:
             logger.warning(f"ユーザーが見つかりません: {user_id}")
-            return "ユーザーが見つかりません", 404
+            logger.info(f"利用可能なユーザーID: {list(trainer.user_profiles.keys())[:10]}")
+            # ユーザー一覧ページにリダイレクト
+            return redirect(url_for('posture_diagnosis'))
         
         user = trainer.user_profiles[user_id]
         
