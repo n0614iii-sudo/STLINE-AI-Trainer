@@ -262,7 +262,13 @@ class LINENotifier:
             if url.startswith('/'):
                 url = url[1:]
             
-            return base_url + url
+            full_url = base_url + url
+            
+            # Railway環境の場合、HTTPSを使用
+            if 'railway.app' in base_url and full_url.startswith('http://'):
+                full_url = full_url.replace('http://', 'https://')
+            
+            return full_url
         
         return None
 
