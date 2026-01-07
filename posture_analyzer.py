@@ -757,8 +757,8 @@ class PostureAnalyzer:
         
         issue_types = [issue["type"] for issue in issues]
         
-        # 猫背・前傾姿勢の場合
-        if "forward_head_posture" in issue_types or "forward_head" in issue_types:
+        # ストレートネック・猫背・前傾姿勢の場合
+        if "straight_neck" in issue_types or "forward_head_posture" in issue_types or "forward_head" in issue_types:
             tight_muscles.append({
                 "name": "胸鎖乳突筋（きょうさにゅうとつきん）",
                 "reason": "頭部が前方に突出しているため、首の前側の筋肉が短縮している可能性があります",
