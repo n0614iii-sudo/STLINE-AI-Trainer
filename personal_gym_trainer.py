@@ -95,6 +95,7 @@ class UserProfile:
     physical_limitations: List[str]
     preferred_language: str = "ja"
     workout_history: List[WorkoutSession] = None
+    line_user_id: Optional[str] = None  # LINEユーザーID
 
     def __post_init__(self):
         if self.workout_history is None:

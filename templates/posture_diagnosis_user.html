@@ -555,25 +555,25 @@
             `;
         }
         
-        // PDFダウンロードボタンを追加
+        // PDFダウンロードボタンとLINE送信ボタンを追加
         html += `
             <div class="mb-4 text-center">
-                <button onclick="generatePDF(${JSON.stringify(analysis).replace(/"/g, '&quot;')}, '${reportImageUrl || ''}', '${xrayImageUrl || ''}', '${visualizedImageUrl || ''}')" 
-                        class="btn btn-3d btn-lg" 
-                        style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 15px 30px; font-size: 18px;">
-                    <i class="fas fa-file-pdf me-2"></i> 診断結果をPDFでダウンロード
-                </button>
-            </div>
-        `;
-        
-        // PDFダウンロードボタンを追加
-        html += `
-            <div class="mb-4 text-center">
-                <button onclick="generatePDF(${JSON.stringify(analysis).replace(/"/g, '&quot;')}, '${reportImageUrl || ''}', '${xrayImageUrl || ''}', '${visualizedImageUrl || ''}')" 
-                        class="btn btn-3d btn-lg" 
-                        style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
-                    <i class="fas fa-file-pdf me-2"></i> 診断結果をPDFでダウンロード
-                </button>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <button onclick="generatePDF(${JSON.stringify(analysis).replace(/"/g, '&quot;')}, '${reportImageUrl || ''}', '${xrayImageUrl || ''}', '${visualizedImageUrl || ''}')" 
+                                class="btn btn-3d btn-lg w-100" 
+                                style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
+                            <i class="fas fa-file-pdf me-2"></i> 診断結果をPDFでダウンロード
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button onclick="sendToLINE(${JSON.stringify(analysis).replace(/"/g, '&quot;')}, '${reportImageUrl || ''}', '${xrayImageUrl || ''}', '${visualizedImageUrl || ''}')" 
+                                class="btn btn-3d btn-lg w-100" 
+                                style="background: linear-gradient(135deg, #06C755 0%, #00B900 100%); color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(6, 199, 85, 0.4);">
+                            <i class="fab fa-line me-2"></i> LINEで送信
+                        </button>
+                    </div>
+                </div>
             </div>
         `;
         

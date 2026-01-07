@@ -31,6 +31,14 @@ except ImportError as e:
     PDF_AVAILABLE = False
     PDFGenerator = None
 
+try:
+    from line_notifier import LINENotifier
+    LINE_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"LINE通知モジュールのインポートに失敗しました: {e}")
+    LINE_AVAILABLE = False
+    LINENotifier = None
+
 # 環境変数を読み込み
 load_dotenv()
 
@@ -77,6 +85,21 @@ posture_visualizer = PostureVisualizer()
 
 # 姿勢タイプ自動判定器インスタンス
 posture_type_detector = PostureTypeDetector()
+
+# LINE通知器インスタンス（利用可能な場合のみ）
+line_notifier = None
+if LINE_AVAILABLE:
+    try:
+        line_notifier = LINENotifier()
+        if line_notifier.is_available():
+            logger.info("LINE通知器を初期化しました")
+        else:
+            logger.info("LINE通知機能は利用できません（LINE_CHANNEL_ACCESS_TOKENが設定されていません）")
+    except Exception as e:
+        logger.warning(f"LINE通知器の初期化に失敗しました: {e}")
+        line_notifier = None
+else:
+    logger.info("LINE通知機能は利用できません（line_notifierモジュールが利用できません）")
 
 # PDF生成器インスタンス（利用可能な場合のみ）
 pdf_generator = None
@@ -1061,6 +1084,102 @@ def api_generate_pdf(user_id):
     
     except Exception as e:
         logger.error(f"PDF生成APIエラー: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/posture/line/<user_id>', methods=['POST'])
+def api_send_line(user_id):
+    """診断結果をLINEで送信"""
+    try:
+        from urllib.parse import unquote
+        user_id = unquote(user_id)
+        
+        if not LINE_AVAILABLE or line_notifier is None or not line_notifier.is_available():
+            return jsonify({"status": "error", "message": "LINE通知機能は利用できません"}), 503
+        
+        if user_id not in trainer.user_profiles:
+            return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
+        
+        user = trainer.user_profiles[user_id]
+        
+        # LINEユーザーIDを取得（ユーザープロファイルから）
+        line_user_id = getattr(user, 'line_user_id', None)
+        if not line_user_id:
+            # リクエストからLINEユーザーIDを取得
+            data = request.json
+            line_user_id = data.get('line_user_id')
+            
+            if not line_user_id:
+                return jsonify({"status": "error", "message": "LINEユーザーIDが必要です"}), 400
+            
+            # ユーザープロファイルにLINEユーザーIDを保存
+            user.line_user_id = line_user_id
+            trainer.save_config()
+        
+        # 分析データを取得
+        data = request.json
+        analysis = data.get('analysis')
+        if not analysis:
+            return jsonify({"status": "error", "message": "分析結果が必要です"}), 400
+        
+        # 画像URLを取得
+        report_image_url = data.get('report_image_url', None)
+        xray_image_url = data.get('xray_image_url', None)
+        visualized_image_url = data.get('visualized_image_url', None)
+        
+        # ベースURLを取得
+        base_url = request.url_root.rstrip('/')
+        
+        # LINEで送信
+        success = line_notifier.send_posture_diagnosis(
+            line_user_id=line_user_id,
+            user_name=user.name,
+            analysis=analysis,
+            report_image_url=report_image_url,
+            xray_image_url=xray_image_url,
+            visualized_image_url=visualized_image_url,
+            base_url=base_url
+        )
+        
+        if success:
+            return jsonify({
+                "status": "success",
+                "message": "LINE通知を送信しました"
+            })
+        else:
+            return jsonify({"status": "error", "message": "LINE通知の送信に失敗しました"}), 500
+    
+    except Exception as e:
+        logger.error(f"LINE送信APIエラー: {e}", exc_info=True)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/user/<user_id>/line', methods=['POST', 'PUT'])
+def api_set_line_user_id(user_id):
+    """ユーザーのLINEユーザーIDを設定"""
+    try:
+        from urllib.parse import unquote
+        user_id = unquote(user_id)
+        
+        if user_id not in trainer.user_profiles:
+            return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
+        
+        user = trainer.user_profiles[user_id]
+        data = request.json
+        line_user_id = data.get('line_user_id', '').strip()
+        
+        if not line_user_id:
+            return jsonify({"status": "error", "message": "LINEユーザーIDが必要です"}), 400
+        
+        # ユーザープロファイルにLINEユーザーIDを保存
+        user.line_user_id = line_user_id
+        trainer.save_config()
+        
+        return jsonify({
+            "status": "success",
+            "message": "LINEユーザーIDを設定しました"
+        })
+    
+    except Exception as e:
+        logger.error(f"LINEユーザーID設定APIエラー: {e}", exc_info=True)
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/stats')
