@@ -123,30 +123,117 @@ class PostureAnalyzer:
             shoulder_angle = math.degrees(math.atan2(rs.y - ls.y, rs.x - ls.x))
             angles["shoulder_tilt"] = abs(shoulder_angle)
         
-        # 首の角度（前傾・後傾、医学的基準: 0-5度が正常、5度以上で問題）
-        if all(k in keypoints for k in ["nose", "left_shoulder", "right_shoulder"]):
-            # 耳の中心を計算（より正確な首の角度のため）
-            le = keypoints.get("left_ear")
-            re = keypoints.get("right_ear")
-            if le and re:
-                ear_center = ((le.x + re.x) / 2, (le.y + re.y) / 2)
-            else:
-                # 耳がない場合は鼻を使用
-                nose = keypoints["nose"]
-                ear_center = (nose.x, nose.y)
-            
+        # 首の角度とストレートネック検出（改善: より正確な医学的基準）
+        if all(k in keypoints for k in ["left_shoulder", "right_shoulder"]):
             ls = keypoints["left_shoulder"]
             rs = keypoints["right_shoulder"]
             shoulder_center = ((ls.x + rs.x) / 2, (ls.y + rs.y) / 2)
             
-            # 首の角度を計算（垂直線からの角度）
-            # 正の値: 前傾、負の値: 後傾
-            neck_angle = math.degrees(math.atan2(
-                ear_center[1] - shoulder_center[1],
-                abs(ear_center[0] - shoulder_center[0])
-            ))
-            # 正常範囲: 0-5度、問題: 5度以上
-            angles["neck_angle"] = neck_angle
+            # 耳の中心を計算（必須：ストレートネック検出には耳の位置が重要）
+            ear_center = None
+            ear_center_x = None
+            ear_center_y = None
+            
+            le = keypoints.get("left_ear")
+            re = keypoints.get("right_ear")
+            if le and re:
+                le_conf = le.confidence if hasattr(le, 'confidence') else (le[2] if isinstance(le, (list, tuple)) and len(le) >= 3 else 0.0)
+                re_conf = re.confidence if hasattr(re, 'confidence') else (re[2] if isinstance(re, (list, tuple)) and len(re) >= 3 else 0.0)
+                
+                if le_conf > 0.2 and re_conf > 0.2:  # 信頼度が0.2以上
+                    le_x = le.x if hasattr(le, 'x') else (le[0] if isinstance(le, (list, tuple)) else 0.0)
+                    le_y = le.y if hasattr(le, 'y') else (le[1] if isinstance(le, (list, tuple)) else 0.0)
+                    re_x = re.x if hasattr(re, 'x') else (re[0] if isinstance(re, (list, tuple)) else 0.0)
+                    re_y = re.y if hasattr(re, 'y') else (re[1] if isinstance(re, (list, tuple)) else 0.0)
+                    ear_center_x = (le_x + re_x) / 2
+                    ear_center_y = (le_y + re_y) / 2
+                    ear_center = (ear_center_x, ear_center_y)
+            elif le:
+                le_conf = le.confidence if hasattr(le, 'confidence') else (le[2] if isinstance(le, (list, tuple)) and len(le) >= 3 else 0.0)
+                if le_conf > 0.2:
+                    ear_center_x = le.x if hasattr(le, 'x') else (le[0] if isinstance(le, (list, tuple)) else 0.0)
+                    ear_center_y = le.y if hasattr(le, 'y') else (le[1] if isinstance(le, (list, tuple)) else 0.0)
+                    ear_center = (ear_center_x, ear_center_y)
+            elif re:
+                re_conf = re.confidence if hasattr(re, 'confidence') else (re[2] if isinstance(re, (list, tuple)) and len(re) >= 3 else 0.0)
+                if re_conf > 0.2:
+                    ear_center_x = re.x if hasattr(re, 'x') else (re[0] if isinstance(re, (list, tuple)) else 0.0)
+                    ear_center_y = re.y if hasattr(re, 'y') else (re[1] if isinstance(re, (list, tuple)) else 0.0)
+                    ear_center = (ear_center_x, ear_center_y)
+            
+            if ear_center:
+                # C7（第7頚椎）の推定位置：肩の中心より少し上（体高の約5-8%上）
+                # 体の高さを推定
+                body_height = 0
+                if "left_ankle" in keypoints or "right_ankle" in keypoints:
+                    if "left_ankle" in keypoints and "left_shoulder" in keypoints:
+                        la = keypoints["left_ankle"]
+                        la_y = la.y if hasattr(la, 'y') else (la[1] if isinstance(la, (list, tuple)) else 0.0)
+                        ls_y = ls.y if hasattr(ls, 'y') else (ls[1] if isinstance(ls, (list, tuple)) else 0.0)
+                        body_height = abs(la_y - ls_y)
+                    elif "right_ankle" in keypoints and "right_shoulder" in keypoints:
+                        ra = keypoints["right_ankle"]
+                        ra_y = ra.y if hasattr(ra, 'y') else (ra[1] if isinstance(ra, (list, tuple)) else 0.0)
+                        rs_y = rs.y if hasattr(rs, 'y') else (rs[1] if isinstance(rs, (list, tuple)) else 0.0)
+                        body_height = abs(ra_y - rs_y)
+                
+                if body_height == 0:
+                    # 体高が取得できない場合は肩から骨盤までの距離を使用
+                    if "left_hip" in keypoints and "right_hip" in keypoints:
+                        lh = keypoints["left_hip"]
+                        rh = keypoints["right_hip"]
+                        lh_y = lh.y if hasattr(lh, 'y') else (lh[1] if isinstance(lh, (list, tuple)) else 0.0)
+                        rh_y = rh.y if hasattr(rh, 'y') else (rh[1] if isinstance(rh, (list, tuple)) else 0.0)
+                        hip_center_y = (lh_y + rh_y) / 2
+                        shoulder_center_y = shoulder_center[1]
+                        body_height = abs(hip_center_y - shoulder_center_y) * 2  # 肩から骨盤までを2倍して体高を推定
+                
+                if body_height == 0:
+                    body_height = 500  # デフォルト値
+                
+                # C7の推定位置（肩の中心より体高の約6%上）
+                c7_y = shoulder_center[1] - body_height * 0.06
+                c7_x = shoulder_center[0]  # 肩の中心と同じX座標
+                c7_point = (c7_x, c7_y)
+                
+                # CVA（Craniovertebral Angle）を計算
+                # 水平線と耳-C7線の角度
+                # 正常範囲: 約50度、45度以下でストレートネック
+                ear_to_c7_vec = (ear_center[0] - c7_point[0], ear_center[1] - c7_point[1])
+                horizontal_vec = (1.0, 0.0)  # 水平ベクトル
+                
+                # 内積と外積を計算
+                dot = ear_to_c7_vec[0] * horizontal_vec[0] + ear_to_c7_vec[1] * horizontal_vec[1]
+                det = ear_to_c7_vec[0] * horizontal_vec[1] - ear_to_c7_vec[1] * horizontal_vec[0]
+                cva_angle = math.degrees(math.atan2(det, dot))
+                
+                # CVA角度を正の値に変換（0-180度の範囲）
+                if cva_angle < 0:
+                    cva_angle = 180 + cva_angle
+                
+                angles["cva_angle"] = cva_angle  # CVA角度
+                
+                # 頭部の前傾距離を計算（耳の中心が肩の中心より前に出ている距離）
+                # 正常: 耳の中心は肩の中心より少し上にあるべき
+                forward_distance = ear_center[0] - shoulder_center[0]  # X方向の距離（前後）
+                forward_distance_ratio = forward_distance / body_height if body_height > 0 else 0
+                
+                # 前傾距離を角度に変換（より直感的な評価のため）
+                vertical_distance = abs(ear_center[1] - shoulder_center[1])
+                if vertical_distance > 0:
+                    forward_angle = math.degrees(math.atan2(forward_distance, vertical_distance))
+                else:
+                    forward_angle = 0.0
+                
+                angles["neck_forward_angle"] = forward_angle  # 前傾角度
+                angles["neck_forward_distance_ratio"] = forward_distance_ratio  # 前傾距離比
+                
+                # 従来の首の角度も計算（互換性のため）
+                neck_angle = math.degrees(math.atan2(
+                    ear_center[1] - shoulder_center[1],
+                    abs(ear_center[0] - shoulder_center[0])
+                ))
+                angles["neck_angle"] = neck_angle
         
         # 背骨の角度（猫背・反り腰の検出）
         if all(k in keypoints for k in ["left_shoulder", "right_shoulder", "left_hip", "right_hip"]):
@@ -584,10 +671,12 @@ class PostureAnalyzer:
         
         issue_types = [issue["type"] for issue in issues]
         
-        if "forward_head_posture" in issue_types or "forward_head" in issue_types:
-            recommendations.append("首と肩のストレッチを毎日行いましょう")
-            recommendations.append("デスクワーク中は定期的に首を後ろに倒す運動をしましょう")
-            recommendations.append("胸を開くストレッチ（胸筋ストレッチ）を推奨します")
+        if "straight_neck" in issue_types or "forward_head_posture" in issue_types or "forward_head" in issue_types:
+            recommendations.append("首と肩のストレッチを毎日行いましょう（特に胸鎖乳突筋と上斜方筋）")
+            recommendations.append("デスクワーク中は定期的に首を後ろに倒す運動をしましょう（1時間ごとに10回）")
+            recommendations.append("胸を開くストレッチ（胸筋ストレッチ）を推奨します（30秒×3セット）")
+            recommendations.append("首の後ろの筋肉（後頭下筋群）を強化するエクササイズを行いましょう")
+            recommendations.append("スマートフォンやPCの画面を目の高さに調整しましょう")
         
         if "shoulder_imbalance" in issue_types:
             recommendations.append("左右の肩のバランスを整えるエクササイズを行いましょう")
