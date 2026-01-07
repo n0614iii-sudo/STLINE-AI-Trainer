@@ -1126,8 +1126,10 @@ def api_send_line(user_id):
         xray_image_url = data.get('xray_image_url', None)
         visualized_image_url = data.get('visualized_image_url', None)
         
-        # ベースURLを取得
+        # ベースURLを取得（HTTPSを優先）
         base_url = request.url_root.rstrip('/')
+        if 'railway.app' in base_url and base_url.startswith('http://'):
+            base_url = base_url.replace('http://', 'https://')
         
         # LINEで送信
         success = line_notifier.send_posture_diagnosis(
