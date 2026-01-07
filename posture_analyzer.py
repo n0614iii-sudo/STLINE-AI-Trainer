@@ -759,52 +759,66 @@ class PostureAnalyzer:
         
         # ストレートネック・猫背・前傾姿勢の場合
         if "straight_neck" in issue_types or "forward_head_posture" in issue_types or "forward_head" in issue_types:
+            # ストレートネックの深刻度を確認
+            straight_neck_issues = [i for i in issues if i["type"] in ["straight_neck", "forward_head_posture", "forward_head"]]
+            max_severity = max([i["severity"] for i in straight_neck_issues], key=lambda x: {"high": 3, "medium": 2, "low": 1}.get(x, 0)) if straight_neck_issues else "medium"
+            
             tight_muscles.append({
                 "name": "胸鎖乳突筋（きょうさにゅうとつきん）",
-                "reason": "頭部が前方に突出しているため、首の前側の筋肉が短縮している可能性があります",
-                "severity": "high" if any(i["type"] in ["forward_head_posture", "forward_head"] and i["severity"] == "high" for i in issues) else "medium"
+                "reason": "頭部が前方に突出しているため、首の前側の筋肉が短縮・緊張している可能性があります。ストレートネックの典型的な症状です。",
+                "severity": max_severity
+            })
+            tight_muscles.append({
+                "name": "前斜角筋（ぜんしゃかくきん）",
+                "reason": "首の前傾により、首の前側の深層筋が短縮しています。ストレートネックの原因となることがあります。",
+                "severity": max_severity
             })
             tight_muscles.append({
                 "name": "小胸筋（しょうきょうきん）",
-                "reason": "肩が内転し、胸が閉じているため、前胸部の筋肉が短縮しています",
-                "severity": "high" if any(i["type"] in ["forward_head_posture", "forward_head"] and i["severity"] == "high" for i in issues) else "medium"
+                "reason": "肩が内転し、胸が閉じているため、前胸部の筋肉が短縮しています。",
+                "severity": max_severity
             })
             tight_muscles.append({
-                "name": "上腕二頭筋（じょうわんにとうきん）",
-                "reason": "肩の内転により、上腕の前側の筋肉が短縮している可能性があります",
-                "severity": "medium"
+                "name": "上斜方筋（じょうしゃとうぼうきん）",
+                "reason": "肩が上がり、首の後ろの筋肉が緊張しています。ストレートネックと関連があります。",
+                "severity": "medium" if max_severity == "high" else "low"
             })
             
             stretch_needed.append({
                 "muscle": "胸鎖乳突筋",
-                "method": "首を横に倒し、反対側に回旋させるストレッチ。30秒×3セット",
-                "frequency": "毎日2回"
+                "method": "首を横に倒し、反対側に回旋させるストレッチ。首の前側を伸ばします。30秒×3セット",
+                "frequency": "1日2-3回"
+            })
+            stretch_needed.append({
+                "muscle": "前斜角筋",
+                "method": "首を横に倒し、反対側に回旋させ、さらに後ろに倒すストレッチ。30秒×3セット",
+                "frequency": "1日2回"
             })
             stretch_needed.append({
                 "muscle": "小胸筋",
-                "method": "壁に手をついて胸を開くストレッチ（ドアウェイストレッチ）。30秒×3セット",
-                "frequency": "毎日2回"
+                "method": "壁を使った胸筋ストレッチ。腕を90度に上げて壁に手をつき、体を前に倒す。30秒×3セット",
+                "frequency": "1日2回"
             })
             stretch_needed.append({
-                "muscle": "上腕二頭筋",
-                "method": "壁に手をついて上腕を後方に引くストレッチ。30秒×3セット",
-                "frequency": "毎日1回"
+                "muscle": "上斜方筋",
+                "method": "首を横に倒し、反対側の手で頭を軽く押すストレッチ。30秒×3セット",
+                "frequency": "1日2回"
             })
             
             strengthen_needed.append({
-                "muscle": "深部頸部屈筋（しんぶけいぶくっきん）",
-                "exercise": "チンタック（あごを引く運動）。10回×3セット",
-                "frequency": "毎日2回"
+                "muscle": "深頚屈筋（しんけいくっきん）",
+                "exercise": "チンイン（首を後ろに倒す運動）。頭を後ろに倒し、首の前側の深層筋を強化。10回×3セット",
+                "frequency": "1日2-3回"
             })
             strengthen_needed.append({
-                "muscle": "中・下部僧帽筋（ちゅう・かぶそうぼうきん）",
-                "exercise": "肩甲骨を寄せる運動（肩甲骨プル）。15回×3セット",
-                "frequency": "毎日2回"
+                "muscle": "後頭下筋群（こうとうかきんぐん）",
+                "exercise": "首の後ろの小さな筋肉を強化。頭を後ろに倒し、後頭部を手で軽く押し、抵抗をかける。10回×3セット",
+                "frequency": "1日2回"
             })
             strengthen_needed.append({
-                "muscle": "菱形筋（りょうけいきん）",
-                "exercise": "肩甲骨を寄せる運動。15回×3セット",
-                "frequency": "毎日2回"
+                "muscle": "中・下斜方筋",
+                "exercise": "肩甲骨を寄せる運動（リトラクション）。肩を後ろに引き、肩甲骨を寄せる。10回×3セット",
+                "frequency": "1日2回"
             })
         
         # 肩の高さの違い
