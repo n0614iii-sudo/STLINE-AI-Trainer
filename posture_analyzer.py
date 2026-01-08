@@ -235,7 +235,7 @@ class PostureAnalyzer:
                 ))
                 angles["neck_angle"] = neck_angle
         
-        # 背骨の角度（猫背・反り腰の検出）
+        # 背骨の角度と猫背検出（改善: より正確な医学的基準）
         if all(k in keypoints for k in ["left_shoulder", "right_shoulder", "left_hip", "right_hip"]):
             ls = keypoints["left_shoulder"]
             rs = keypoints["right_shoulder"]
@@ -245,11 +245,93 @@ class PostureAnalyzer:
             shoulder_center = ((ls.x + rs.x) / 2, (ls.y + rs.y) / 2)
             hip_center = ((lh.x + rh.x) / 2, (lh.y + rh.y) / 2)
             
+            # 体の高さを推定（相対評価のため）
+            body_height = abs(hip_center[1] - shoulder_center[1])
+            if body_height == 0:
+                # 体高が取得できない場合は、肩から足首までの距離を使用
+                if "left_ankle" in keypoints or "right_ankle" in keypoints:
+                    if "left_ankle" in keypoints:
+                        la = keypoints["left_ankle"]
+                        la_y = la.y if hasattr(la, 'y') else (la[1] if isinstance(la, (list, tuple)) else 0.0)
+                        body_height = abs(la_y - shoulder_center[1])
+                    elif "right_ankle" in keypoints:
+                        ra = keypoints["right_ankle"]
+                        ra_y = ra.y if hasattr(ra, 'y') else (ra[1] if isinstance(ra, (list, tuple)) else 0.0)
+                        body_height = abs(ra_y - shoulder_center[1])
+            
+            if body_height == 0:
+                body_height = 500  # デフォルト値
+            
+            # 背骨の角度（従来の計算）
             spine_angle = math.degrees(math.atan2(
                 hip_center[1] - shoulder_center[1],
                 abs(hip_center[0] - shoulder_center[0])
             ))
             angles["spine_angle"] = spine_angle
+            
+            # 肩の前傾角度（猫背検出の重要な指標）
+            # 正常: 肩の中心は骨盤の中心より少し後ろにあるべき
+            # 猫背: 肩が前に出ている
+            shoulder_forward_distance = shoulder_center[0] - hip_center[0]  # X方向の距離（前後）
+            shoulder_vertical_distance = abs(shoulder_center[1] - hip_center[1])
+            if shoulder_vertical_distance > 0:
+                shoulder_forward_angle = math.degrees(math.atan2(shoulder_forward_distance, shoulder_vertical_distance))
+            else:
+                shoulder_forward_angle = 0.0
+            angles["shoulder_forward_angle"] = shoulder_forward_angle
+            angles["shoulder_forward_distance_ratio"] = shoulder_forward_distance / body_height if body_height > 0 else 0
+            
+            # 頭部と骨盤の位置関係（猫背では頭部が前に出る）
+            ear_center = None
+            if "left_ear" in keypoints and "right_ear" in keypoints:
+                le = keypoints["left_ear"]
+                re = keypoints["right_ear"]
+                le_conf = le.confidence if hasattr(le, 'confidence') else (le[2] if isinstance(le, (list, tuple)) and len(le) >= 3 else 0.0)
+                re_conf = re.confidence if hasattr(re, 'confidence') else (re[2] if isinstance(re, (list, tuple)) and len(re) >= 3 else 0.0)
+                if le_conf > 0.2 and re_conf > 0.2:
+                    le_x = le.x if hasattr(le, 'x') else (le[0] if isinstance(le, (list, tuple)) else 0.0)
+                    le_y = le.y if hasattr(le, 'y') else (le[1] if isinstance(le, (list, tuple)) else 0.0)
+                    re_x = re.x if hasattr(re, 'x') else (re[0] if isinstance(re, (list, tuple)) else 0.0)
+                    re_y = re.y if hasattr(re, 'y') else (re[1] if isinstance(re, (list, tuple)) else 0.0)
+                    ear_center = ((le_x + re_x) / 2, (le_y + re_y) / 2)
+            elif "left_ear" in keypoints:
+                le = keypoints["left_ear"]
+                le_conf = le.confidence if hasattr(le, 'confidence') else (le[2] if isinstance(le, (list, tuple)) and len(le) >= 3 else 0.0)
+                if le_conf > 0.2:
+                    le_x = le.x if hasattr(le, 'x') else (le[0] if isinstance(le, (list, tuple)) else 0.0)
+                    le_y = le.y if hasattr(le, 'y') else (le[1] if isinstance(le, (list, tuple)) else 0.0)
+                    ear_center = (le_x, le_y)
+            elif "right_ear" in keypoints:
+                re = keypoints["right_ear"]
+                re_conf = re.confidence if hasattr(re, 'confidence') else (re[2] if isinstance(re, (list, tuple)) and len(re) >= 3 else 0.0)
+                if re_conf > 0.2:
+                    re_x = re.x if hasattr(re, 'x') else (re[0] if isinstance(re, (list, tuple)) else 0.0)
+                    re_y = re.y if hasattr(re, 'y') else (re[1] if isinstance(re, (list, tuple)) else 0.0)
+                    ear_center = (re_x, re_y)
+            
+            if ear_center:
+                # 頭部と骨盤の前後関係
+                head_forward_distance = ear_center[0] - hip_center[0]
+                head_vertical_distance = abs(ear_center[1] - hip_center[1])
+                if head_vertical_distance > 0:
+                    head_forward_angle = math.degrees(math.atan2(head_forward_distance, head_vertical_distance))
+                else:
+                    head_forward_angle = 0.0
+                angles["head_forward_angle"] = head_forward_angle
+                angles["head_forward_distance_ratio"] = head_forward_distance / body_height if body_height > 0 else 0
+                
+                # 胸椎の曲がり角度（推定：頭部、肩、骨盤の3点から）
+                # 正常な姿勢では、頭部-肩-骨盤はほぼ一直線
+                # 猫背では、肩が前に出て曲がりが生じる
+                vec1 = (shoulder_center[0] - ear_center[0], shoulder_center[1] - ear_center[1])
+                vec2 = (hip_center[0] - shoulder_center[0], hip_center[1] - shoulder_center[1])
+                dot = vec1[0] * vec2[0] + vec1[1] * vec2[1]
+                det = vec1[0] * vec2[1] - vec1[1] * vec2[0]
+                thoracic_angle = math.degrees(math.atan2(det, dot))
+                # 角度を0-180度の範囲に変換
+                if thoracic_angle < 0:
+                    thoracic_angle = 180 + thoracic_angle
+                angles["thoracic_angle"] = thoracic_angle
         
         # 膝の角度
         if all(k in keypoints for k in ["left_hip", "left_knee", "left_ankle"]):
@@ -560,10 +642,102 @@ class PostureAnalyzer:
                 "impact": "腰痛や姿勢不良の原因になる可能性があります"
             })
         
-        # 猫背（前傾姿勢）（医学的基準: 5度以上で問題）
+        # 猫背検出（改善: 複数の指標を組み合わせた評価）
+        kyphosis_detected = False
+        kyphosis_severity = None
+        kyphosis_description = None
+        
+        # 1. 背骨の角度による評価（従来の指標）
         if "spine_angle" in angles:
             spine_angle = angles["spine_angle"]
             # 前傾（負の値）: 5度以上で問題
+            if spine_angle < -5:
+                if spine_angle < -15:
+                    kyphosis_severity = "high"
+                    kyphosis_description = f"重度の猫背の可能性があります（前傾角度: {abs(spine_angle):.1f}度）"
+                elif spine_angle < -10:
+                    kyphosis_severity = "medium"
+                    kyphosis_description = f"猫背の傾向があります（前傾角度: {abs(spine_angle):.1f}度）"
+                else:
+                    kyphosis_severity = "low"
+                    kyphosis_description = f"軽度の猫背の可能性があります（前傾角度: {abs(spine_angle):.1f}度）"
+                kyphosis_detected = True
+        
+        # 2. 肩の前傾角度による評価（補助指標）
+        if "shoulder_forward_angle" in angles:
+            shoulder_forward_angle = angles["shoulder_forward_angle"]
+            # 肩が前に出ている（正の値）: 5度以上で問題
+            if shoulder_forward_angle > 5:
+                if not kyphosis_detected:
+                    if shoulder_forward_angle > 15:
+                        kyphosis_severity = "high"
+                        kyphosis_description = f"肩が大きく前に出ています（前傾角度: {shoulder_forward_angle:.1f}度、猫背の可能性）"
+                    elif shoulder_forward_angle > 10:
+                        kyphosis_severity = "medium"
+                        kyphosis_description = f"肩が前に出ています（前傾角度: {shoulder_forward_angle:.1f}度、猫背の可能性）"
+                    else:
+                        kyphosis_severity = "low"
+                        kyphosis_description = f"肩がわずかに前に出ています（前傾角度: {shoulder_forward_angle:.1f}度）"
+                    kyphosis_detected = True
+                else:
+                    # 背骨の角度と肩の前傾角度の両方が問題の場合、深刻度を上げる
+                    if shoulder_forward_angle > 10 and kyphosis_severity == "low":
+                        kyphosis_severity = "medium"
+                    elif shoulder_forward_angle > 15 and kyphosis_severity == "medium":
+                        kyphosis_severity = "high"
+        
+        # 3. 胸椎の曲がり角度による評価（補助指標）
+        if "thoracic_angle" in angles:
+            thoracic_angle = angles["thoracic_angle"]
+            # 正常範囲: 170-180度、それ以下で猫背の可能性
+            if thoracic_angle < 170:
+                if not kyphosis_detected:
+                    if thoracic_angle < 150:
+                        kyphosis_severity = "high"
+                        kyphosis_description = f"胸椎の曲がりが大きいです（角度: {thoracic_angle:.1f}度、正常: 170-180度、猫背の可能性）"
+                    elif thoracic_angle < 160:
+                        kyphosis_severity = "medium"
+                        kyphosis_description = f"胸椎の曲がりがあります（角度: {thoracic_angle:.1f}度、正常: 170-180度、猫背の可能性）"
+                    else:
+                        kyphosis_severity = "low"
+                        kyphosis_description = f"軽度の胸椎の曲がりがあります（角度: {thoracic_angle:.1f}度、正常: 170-180度）"
+                    kyphosis_detected = True
+                else:
+                    # 他の指標と組み合わせて評価
+                    if thoracic_angle < 150 and kyphosis_severity == "low":
+                        kyphosis_severity = "medium"
+                    elif thoracic_angle < 150 and kyphosis_severity == "medium":
+                        kyphosis_severity = "high"
+        
+        # 4. 肩の前傾距離比による評価（補助指標）
+        if "shoulder_forward_distance_ratio" in angles:
+            shoulder_forward_ratio = angles["shoulder_forward_distance_ratio"]
+            # 肩が体高の3%以上前に出ている場合、問題
+            if shoulder_forward_ratio > 0.03:
+                if not kyphosis_detected:
+                    if shoulder_forward_ratio > 0.08:
+                        kyphosis_severity = "high"
+                        kyphosis_description = f"肩が大きく前に出ています（前傾距離: 体高の{shoulder_forward_ratio*100:.1f}%、猫背の可能性）"
+                    elif shoulder_forward_ratio > 0.05:
+                        kyphosis_severity = "medium"
+                        kyphosis_description = f"肩が前に出ています（前傾距離: 体高の{shoulder_forward_ratio*100:.1f}%、猫背の可能性）"
+                    else:
+                        kyphosis_severity = "low"
+                        kyphosis_description = f"肩がわずかに前に出ています（前傾距離: 体高の{shoulder_forward_ratio*100:.1f}%）"
+                    kyphosis_detected = True
+        
+        # 猫背の問題を追加
+        if kyphosis_detected and kyphosis_severity:
+            issues.append({
+                "type": "kyphosis",
+                "severity": kyphosis_severity,
+                "description": kyphosis_description,
+                "impact": "首や肩の痛み、頭痛、呼吸機能の低下、背中の痛み、姿勢不良の原因になる可能性があります。長時間のデスクワークやスマートフォンの使用が原因の可能性があります。"
+            })
+        
+        # 従来の猫背検出（互換性のため、kyphosisが検出されない場合のみ）
+        if not kyphosis_detected and "spine_angle" in angles:
+            spine_angle = angles["spine_angle"]
             if spine_angle < -5:
                 severity = "high" if spine_angle < -15 else ("medium" if spine_angle < -10 else "low")
                 issues.append({
@@ -677,6 +851,14 @@ class PostureAnalyzer:
             recommendations.append("胸を開くストレッチ（胸筋ストレッチ）を推奨します（30秒×3セット）")
             recommendations.append("首の後ろの筋肉（後頭下筋群）を強化するエクササイズを行いましょう")
             recommendations.append("スマートフォンやPCの画面を目の高さに調整しましょう")
+        
+        if "kyphosis" in issue_types or "forward_head_posture" in issue_types:
+            recommendations.append("胸を開くストレッチ（ドアウェイストレッチ）を毎日行いましょう（30秒×3セット）")
+            recommendations.append("背中の筋肉（菱形筋、中・下斜方筋）を強化するエクササイズを行いましょう（10回×3セット）")
+            recommendations.append("デスクワーク中は定期的に背筋を伸ばす運動をしましょう（1時間ごとに10回）")
+            recommendations.append("肩甲骨を寄せる運動（リトラクション）を推奨します（10回×3セット）")
+            recommendations.append("胸筋のストレッチを毎日行いましょう（特に小胸筋、大胸筋）")
+            recommendations.append("デスクの高さと椅子の高さを調整し、正しい姿勢を保ちましょう")
         
         if "shoulder_imbalance" in issue_types:
             recommendations.append("左右の肩のバランスを整えるエクササイズを行いましょう")
@@ -818,6 +1000,75 @@ class PostureAnalyzer:
             strengthen_needed.append({
                 "muscle": "中・下斜方筋",
                 "exercise": "肩甲骨を寄せる運動（リトラクション）。肩を後ろに引き、肩甲骨を寄せる。10回×3セット",
+                "frequency": "1日2回"
+            })
+        
+        # 猫背の場合
+        if "kyphosis" in issue_types or "forward_head_posture" in issue_types:
+            # 猫背の深刻度を確認
+            kyphosis_issues = [i for i in issues if i["type"] in ["kyphosis", "forward_head_posture"]]
+            max_severity = max([i["severity"] for i in kyphosis_issues], key=lambda x: {"high": 3, "medium": 2, "low": 1}.get(x, 0)) if kyphosis_issues else "medium"
+            
+            tight_muscles.append({
+                "name": "小胸筋（しょうきょうきん）",
+                "reason": "肩が内転し、胸が閉じているため、前胸部の筋肉が短縮しています。猫背の典型的な症状です。",
+                "severity": max_severity
+            })
+            tight_muscles.append({
+                "name": "大胸筋（だいきょうきん）",
+                "reason": "胸が閉じているため、前胸部の大きな筋肉が短縮しています。猫背の原因となります。",
+                "severity": max_severity
+            })
+            tight_muscles.append({
+                "name": "前鋸筋（ぜんきょきん）",
+                "reason": "肩甲骨が外転し、前胸部の筋肉が短縮しています。猫背と関連があります。",
+                "severity": "medium" if max_severity == "high" else "low"
+            })
+            tight_muscles.append({
+                "name": "上斜方筋（じょうしゃとうぼうきん）",
+                "reason": "肩が上がり、首の後ろの筋肉が緊張しています。猫背と関連があります。",
+                "severity": "medium" if max_severity == "high" else "low"
+            })
+            
+            stretch_needed.append({
+                "muscle": "小胸筋",
+                "method": "壁を使った胸筋ストレッチ（ドアウェイストレッチ）。腕を90度に上げて壁に手をつき、体を前に倒す。30秒×3セット",
+                "frequency": "1日2-3回"
+            })
+            stretch_needed.append({
+                "muscle": "大胸筋",
+                "method": "壁を使った胸筋ストレッチ。腕を水平に上げて壁に手をつき、体を横に回旋させる。30秒×3セット",
+                "frequency": "1日2回"
+            })
+            stretch_needed.append({
+                "muscle": "前鋸筋",
+                "method": "壁に手をついて体を前に倒し、肩甲骨を外転させるストレッチ。30秒×3セット",
+                "frequency": "1日2回"
+            })
+            stretch_needed.append({
+                "muscle": "上斜方筋",
+                "method": "首を横に倒し、反対側の手で頭を軽く押すストレッチ。30秒×3セット",
+                "frequency": "1日2回"
+            })
+            
+            strengthen_needed.append({
+                "muscle": "菱形筋（りょうけいきん）",
+                "exercise": "肩甲骨を寄せる運動（リトラクション）。肩を後ろに引き、肩甲骨を寄せる。10回×3セット",
+                "frequency": "1日2-3回"
+            })
+            strengthen_needed.append({
+                "muscle": "中・下斜方筋",
+                "exercise": "肩甲骨を下げる運動（デプレッション）。肩を下げ、肩甲骨を下に引く。10回×3セット",
+                "frequency": "1日2回"
+            })
+            strengthen_needed.append({
+                "muscle": "多裂筋（たれつきん）",
+                "exercise": "背骨を支える深部の筋肉を強化。うつ伏せで背筋を伸ばす運動。10回×3セット",
+                "frequency": "1日2回"
+            })
+            strengthen_needed.append({
+                "muscle": "後頭下筋群（こうとうかきんぐん）",
+                "exercise": "首の後ろの小さな筋肉を強化。頭を後ろに倒し、後頭部を手で軽く押し、抵抗をかける。10回×3セット",
                 "frequency": "1日2回"
             })
         
