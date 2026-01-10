@@ -690,10 +690,10 @@
                     <!-- ブランド -->
                     <div class="brand mb-4">
                         <div class="logo-3d">
-                            <i class="fas fa-dumbbell" style="font-size: 3rem; color: #f093fb; text-shadow: 0 0 20px rgba(240, 147, 251, 0.8);"></i>
+                            <i class="fas fa-user-md" style="font-size: 3rem; color: #f093fb; text-shadow: 0 0 20px rgba(240, 147, 251, 0.8);"></i>
                         </div>
                         <h3>STLINE</h3>
-                        <div class="subtitle">AI Personal Trainer</div>
+                        <div class="subtitle">AI 姿勢診断システム</div>
                         <hr style="border-color: rgba(255,255,255,0.2); margin: 1rem 0;">
                         <small style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">by HIKARU NEJIKANE</small>
                     </div>
@@ -701,33 +701,9 @@
                     <!-- ナビゲーション -->
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                                <i class="fas fa-chart-line me-2"></i>
-                                ダッシュボード
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'users_list' %}active{% endif %}" href="{{ url_for('users_list') }}">
-                                <i class="fas fa-users me-2"></i>
-                                ユーザー管理
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'exercises_list' %}active{% endif %}" href="{{ url_for('exercises_list') }}">
-                                <i class="fas fa-running me-2"></i>
-                                運動メニュー
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'posture_diagnosis' or request.endpoint == 'posture_diagnosis_user' %}active{% endif %}" href="{{ url_for('posture_diagnosis') }}">
                                 <i class="fas fa-user-md me-2"></i>
                                 姿勢診断
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="startTrainingSession()">
-                                <i class="fas fa-play-circle me-2"></i>
-                                セッション開始
                             </a>
                         </li>
                     </ul>

@@ -127,177 +127,6 @@ def get_posture_detector():
 
 
 @app.route('/')
-def dashboard():
-    """メインダッシュボード"""
-    # 全体統計を計算
-    total_users = len(trainer.user_profiles)
-    total_sessions = sum(len(user.workout_history) for user in trainer.user_profiles.values())
-    
-    recent_sessions = []
-    for user in trainer.user_profiles.values():
-        for session in user.workout_history[-5:]:  # 最新5件
-            recent_sessions.append({
-                'user_name': user.name,
-                'exercise': trainer.exercise_database.get(session.exercise_type, {}).get('name', session.exercise_type),
-                'date': session.start_time.strftime('%Y-%m-%d %H:%M'),
-                'reps': session.rep_count,
-                'form_score': round(session.form_score, 2)
-            })
-    
-    recent_sessions.sort(key=lambda x: x['date'], reverse=True)
-    
-    return render_template('dashboard.html', 
-                         total_users=total_users,
-                         total_sessions=total_sessions,
-                         recent_sessions=recent_sessions[:10])
-
-
-@app.route('/users')
-def users_list():
-    """ユーザー一覧"""
-    users_data = []
-    for user_id, user in trainer.user_profiles.items():
-        last_session = user.workout_history[-1] if user.workout_history else None
-        users_data.append({
-            'user_id': user_id,
-            'name': user.name,
-            'fitness_level': user.fitness_level,
-            'total_sessions': len(user.workout_history),
-            'last_session': last_session.start_time.strftime('%Y-%m-%d') if last_session else 'なし',
-            'target_goals': ', '.join(user.target_goals)
-        })
-    
-    return render_template('users.html', users=users_data)
-
-
-@app.route('/user/<user_id>')
-def user_detail(user_id):
-    """ユーザー詳細画面"""
-    if user_id not in trainer.user_profiles:
-        return "ユーザーが見つかりません", 404
-    
-    user = trainer.user_profiles[user_id]
-    
-    # 過去30日間の統計
-    summary = trainer.get_workout_summary(user_id, days=30)
-    
-    # セッション履歴（日付順）
-    sessions_data = []
-    for session in sorted(user.workout_history, key=lambda s: s.start_time, reverse=True):
-        duration = "継続中"
-        if session.end_time:
-            duration = str(session.end_time - session.start_time).split('.')[0]
-        
-        sessions_data.append({
-            'date': session.start_time.strftime('%Y-%m-%d %H:%M'),
-            'exercise': trainer.exercise_database.get(session.exercise_type, {}).get('name', session.exercise_type),
-            'reps': session.rep_count,
-            'form_score': round(session.form_score, 2),
-            'calories': round(session.calories_burned, 1),
-            'duration': duration,
-            'feedback_count': len(session.feedback_notes)
-        })
-    
-    return render_template('user_detail.html', 
-                         user=user, 
-                         summary=summary, 
-                         sessions=sessions_data[:20])  # 最新20件
-
-
-@app.route('/add_user', methods=['GET', 'POST'])
-def add_user():
-    """新規ユーザー登録"""
-    if request.method == 'POST':
-        data = request.json if request.is_json else request.form
-        
-        # ユーザーIDの重複チェック
-        user_id = data.get('user_id', '').strip()
-        if not user_id:
-            # ユーザーIDが空の場合は自動生成
-            import random
-            import string
-            timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-            random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
-            user_id = f"user_{timestamp}_{random_str}"
-        
-        # 既存ユーザーIDのチェック
-        if user_id in trainer.user_profiles:
-            # 重複している場合は番号を追加
-            counter = 1
-            original_user_id = user_id
-            while user_id in trainer.user_profiles:
-                user_id = f"{original_user_id}_{counter}"
-                counter += 1
-        
-        # 名前の必須チェック
-        name = data.get('name', '').strip()
-        if not name:
-            if request.is_json:
-                return jsonify({"status": "error", "message": "名前は必須です"}), 400
-            else:
-                return redirect(url_for('add_user'))
-        
-        # デフォルト値の設定
-        fitness_level = data.get('fitness_level', 'beginner')
-        preferred_language = data.get('preferred_language', 'ja')
-        target_goals = data.get('target_goals', [])
-        if isinstance(target_goals, str):
-            target_goals = target_goals.split(',')
-        if not target_goals:
-            target_goals = ['general_fitness']  # デフォルト目標
-        
-        physical_limitations = data.get('physical_limitations', [])
-        if isinstance(physical_limitations, str):
-            physical_limitations = physical_limitations.split(',')
-        
-        user_profile = UserProfile(
-            user_id=user_id,
-            name=name,
-            fitness_level=fitness_level,
-            target_goals=target_goals,
-            physical_limitations=physical_limitations,
-            preferred_language=preferred_language
-        )
-        
-        trainer.add_user_profile(user_profile)
-        trainer.save_config()
-        
-        if request.is_json:
-            return jsonify({
-                "status": "success", 
-                "message": "ユーザーが登録されました",
-                "user_id": user_id
-            })
-        else:
-            return redirect(url_for('users_list'))
-    
-    return render_template('add_user.html')
-
-
-@app.route('/start_session', methods=['POST'])
-def start_session():
-    """セッション開始"""
-    data = request.json
-    user_id = data['user_id']
-    exercise_type = data['exercise_type']
-    
-    if user_id not in trainer.user_profiles:
-        return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
-    
-    session = trainer.start_workout_session(user_id, exercise_type)
-    return jsonify({
-        "status": "success",
-        "message": "セッションが開始されました",
-        "session_id": f"{session.user_id}_{session.start_time.isoformat()}"
-    })
-
-
-@app.route('/exercises')
-def exercises_list():
-    """運動一覧とその詳細"""
-    return render_template('exercises.html', exercises=trainer.exercise_database)
-
-
 @app.route('/posture_diagnosis')
 def posture_diagnosis():
     """姿勢診断ページ"""
@@ -321,14 +150,14 @@ def posture_diagnosis_user(user_id):
         
         logger.info(f"姿勢診断ページにアクセス: user_id={user_id}")
         
-        if user_id not in trainer.user_profiles:
+    if user_id not in trainer.user_profiles:
             logger.warning(f"ユーザーが見つかりません: {user_id}")
             logger.info(f"利用可能なユーザーID: {list(trainer.user_profiles.keys())[:10]}")
             # ユーザー一覧ページにリダイレクト
             return redirect(url_for('posture_diagnosis'))
-        
-        user = trainer.user_profiles[user_id]
-        
+    
+    user = trainer.user_profiles[user_id]
+    
         # 過去の診断結果を読み込み
         try:
             analyses = posture_analyzer.load_analyses(user_id)
@@ -1095,10 +924,10 @@ def api_send_line(user_id):
         
         if not LINE_AVAILABLE or line_notifier is None or not line_notifier.is_available():
             return jsonify({"status": "error", "message": "LINE通知機能は利用できません"}), 503
-        
-        if user_id not in trainer.user_profiles:
-            return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
-        
+    
+    if user_id not in trainer.user_profiles:
+        return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
+    
         user = trainer.user_profiles[user_id]
         
         # LINEユーザーIDを取得（ユーザープロファイルから）
@@ -1143,8 +972,8 @@ def api_send_line(user_id):
         )
         
         if success:
-            return jsonify({
-                "status": "success",
+    return jsonify({
+        "status": "success",
                 "message": "LINE通知を送信しました"
             })
         else:
@@ -1184,71 +1013,24 @@ def api_set_line_user_id(user_id):
         logger.error(f"LINEユーザーID設定APIエラー: {e}", exc_info=True)
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/api/stats')
-def api_stats():
-    """統計API"""
-    # 今日の統計
-    today = datetime.date.today()
-    today_sessions = []
-    
-    for user in trainer.user_profiles.values():
-        for session in user.workout_history:
-            if session.start_time.date() == today:
-                today_sessions.append(session)
-    
-    # 週間統計
-    week_ago = today - datetime.timedelta(days=7)
-    week_sessions = []
-    
-    for user in trainer.user_profiles.values():
-        for session in user.workout_history:
-            if session.start_time.date() >= week_ago:
-                week_sessions.append(session)
-    
-    # 運動別統計
-    exercise_stats = {}
-    for session in week_sessions:
-        ex_type = session.exercise_type
-        if ex_type not in exercise_stats:
-            exercise_stats[ex_type] = {
-                'name': trainer.exercise_database.get(ex_type, {}).get('name', ex_type),
-                'count': 0,
-                'total_reps': 0,
-                'avg_form_score': 0
-            }
-        exercise_stats[ex_type]['count'] += 1
-        exercise_stats[ex_type]['total_reps'] += session.rep_count
-        exercise_stats[ex_type]['avg_form_score'] += session.form_score
-    
-    # 平均スコア計算
-    for stats in exercise_stats.values():
-        if stats['count'] > 0:
-            stats['avg_form_score'] = round(stats['avg_form_score'] / stats['count'], 2)
-    
-    return jsonify({
-        'today_sessions': len(today_sessions),
-        'week_sessions': len(week_sessions),
-        'total_users': len(trainer.user_profiles),
-        'exercise_stats': exercise_stats
-    })
 
 
 if __name__ == '__main__':
     try:
-        # 設定読み込み
-        trainer.load_config()
-        
-        print("""
-🌐 パーソナルジム管理ダッシュボード起動
+    # 設定読み込み
+    trainer.load_config()
+    
+    print("""
+🌐 STLINE AI 姿勢診断システム起動
 http://localhost:5000 でアクセスできます
 
 主な機能:
-- ユーザー管理
-- トレーニング履歴確認
-- 統計表示
-- セッション管理
-- 姿勢診断
+- AI姿勢診断
+- ストレートネック検出
+- 猫背検出
+- 診断結果の可視化
 - PDFレポート生成
+- LINE通知
 """)
         
         # RailwayではPORT環境変数が自動的に設定される
