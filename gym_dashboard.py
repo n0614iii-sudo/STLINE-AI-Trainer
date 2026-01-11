@@ -1019,8 +1019,8 @@ if __name__ == '__main__':
     try:
         # 設定読み込み
         trainer.load_config()
-    
-    print("""
+        
+        print("""
 🌐 STLINE AI 姿勢診断システム起動
 http://localhost:5000 でアクセスできます
 
