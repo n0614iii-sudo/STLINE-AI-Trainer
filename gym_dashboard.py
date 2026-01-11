@@ -150,14 +150,14 @@ def posture_diagnosis_user(user_id):
         
         logger.info(f"姿勢診断ページにアクセス: user_id={user_id}")
         
-    if user_id not in trainer.user_profiles:
+        if user_id not in trainer.user_profiles:
             logger.warning(f"ユーザーが見つかりません: {user_id}")
             logger.info(f"利用可能なユーザーID: {list(trainer.user_profiles.keys())[:10]}")
             # ユーザー一覧ページにリダイレクト
             return redirect(url_for('posture_diagnosis'))
-    
-    user = trainer.user_profiles[user_id]
-    
+        
+        user = trainer.user_profiles[user_id]
+        
         # 過去の診断結果を読み込み
         try:
             analyses = posture_analyzer.load_analyses(user_id)
@@ -924,10 +924,10 @@ def api_send_line(user_id):
         
         if not LINE_AVAILABLE or line_notifier is None or not line_notifier.is_available():
             return jsonify({"status": "error", "message": "LINE通知機能は利用できません"}), 503
-    
-    if user_id not in trainer.user_profiles:
-        return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
-    
+        
+        if user_id not in trainer.user_profiles:
+            return jsonify({"status": "error", "message": "ユーザーが見つかりません"}), 404
+        
         user = trainer.user_profiles[user_id]
         
         # LINEユーザーIDを取得（ユーザープロファイルから）
@@ -1017,8 +1017,8 @@ def api_set_line_user_id(user_id):
 
 if __name__ == '__main__':
     try:
-    # 設定読み込み
-    trainer.load_config()
+        # 設定読み込み
+        trainer.load_config()
     
     print("""
 🌐 STLINE AI 姿勢診断システム起動
