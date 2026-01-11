@@ -972,8 +972,8 @@ def api_send_line(user_id):
         )
         
         if success:
-    return jsonify({
-        "status": "success",
+            return jsonify({
+                "status": "success",
                 "message": "LINE通知を送信しました"
             })
         else:
