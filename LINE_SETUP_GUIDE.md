@@ -230,3 +230,5 @@ LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token_here
 
 姿勢診断結果をLINEでお客様に送信できるようになりました！🎉
 
+
+

@@ -133,3 +133,5 @@ GET /api/posture/summary/<user_id>?days=30
 - `posture_detector.py`: YOLO11-Pose検出器
 - `gym_dashboard.py`: Webインターフェース
 
+
+

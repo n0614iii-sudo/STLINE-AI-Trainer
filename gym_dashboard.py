@@ -16,6 +16,13 @@ from dotenv import load_dotenv
 import logging
 
 # ロガー設定（他のインポートより先に設定）
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()  # コンソール出力
+    ]
+)
 logger = logging.getLogger(__name__)
 
 from personal_gym_trainer import PersonalGymTrainer, UserProfile, WorkoutSession
@@ -72,19 +79,39 @@ def is_video_file(filename):
            filename.rsplit('.', 1)[1].lower() in video_extensions
 
 # グローバルトレーナーインスタンス
-trainer = PersonalGymTrainer()
+try:
+    trainer = PersonalGymTrainer()
+    logger.info("PersonalGymTrainerを初期化しました")
+except Exception as e:
+    logger.error(f"PersonalGymTrainerの初期化に失敗しました: {e}", exc_info=True)
+    raise
 
 # 姿勢分析器インスタンス
-posture_analyzer = PostureAnalyzer()
+try:
+    posture_analyzer = PostureAnalyzer()
+    logger.info("PostureAnalyzerを初期化しました")
+except Exception as e:
+    logger.error(f"PostureAnalyzerの初期化に失敗しました: {e}", exc_info=True)
+    raise
 
 # 姿勢検出器インスタンス（必要に応じて初期化）
 posture_detector = None
 
 # 姿勢可視化器インスタンス
-posture_visualizer = PostureVisualizer()
+try:
+    posture_visualizer = PostureVisualizer()
+    logger.info("PostureVisualizerを初期化しました")
+except Exception as e:
+    logger.error(f"PostureVisualizerの初期化に失敗しました: {e}", exc_info=True)
+    raise
 
 # 姿勢タイプ自動判定器インスタンス
-posture_type_detector = PostureTypeDetector()
+try:
+    posture_type_detector = PostureTypeDetector()
+    logger.info("PostureTypeDetectorを初期化しました")
+except Exception as e:
+    logger.error(f"PostureTypeDetectorの初期化に失敗しました: {e}", exc_info=True)
+    raise
 
 # LINE通知器インスタンス（利用可能な場合のみ）
 line_notifier = None
@@ -1018,7 +1045,11 @@ def api_set_line_user_id(user_id):
 if __name__ == '__main__':
     try:
         # 設定読み込み
-        trainer.load_config()
+        try:
+            trainer.load_config()
+            logger.info("設定ファイルを読み込みました")
+        except Exception as e:
+            logger.warning(f"設定ファイルの読み込みに失敗しました（新規作成されます）: {e}")
         
         print("""
 🌐 STLINE AI 姿勢診断システム起動
@@ -1037,6 +1068,9 @@ http://localhost:5000 でアクセスできます
         port = int(os.getenv('PORT', 5000))
         logger.info(f"アプリケーションを起動します: host=0.0.0.0, port={port}")
         app.run(debug=False, host='0.0.0.0', port=port)
+    except KeyboardInterrupt:
+        logger.info("アプリケーションを終了します")
     except Exception as e:
         logger.error(f"アプリケーション起動エラー: {e}", exc_info=True)
-        raise
+        import sys
+        sys.exit(1)

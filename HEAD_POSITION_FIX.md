@@ -160,3 +160,5 @@ head_alignment = score_h * 0.6 + score_v * 0.4
 
 Railwayで再デプロイが完了したら、頭部位置の検出がより正確になるはずです！
 
+
+

@@ -149,3 +149,5 @@ class PostureTypeDetector:
         
         return (posture_type, confidence)
 
+
+

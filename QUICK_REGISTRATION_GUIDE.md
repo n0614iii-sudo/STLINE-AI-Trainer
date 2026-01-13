@@ -122,3 +122,5 @@ function generateUserId(name) {
 
 ユーザー登録の手間が大幅に削減されました！🎉
 
+
+

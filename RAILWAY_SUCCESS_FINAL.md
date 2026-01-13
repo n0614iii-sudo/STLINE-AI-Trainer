@@ -89,3 +89,5 @@ https://stline-ai-trainer-production.up.railway.app
 
 STLINE AI Trainerが本番環境で正常に動作しています！
 
+
+

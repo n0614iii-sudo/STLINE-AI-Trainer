@@ -114,3 +114,5 @@ https://your-app-name.railway.app/posture_diagnosis
 
 姿勢診断機能が追加されました！お試しください！
 
+
+

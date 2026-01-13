@@ -222,3 +222,5 @@ cv2.imwrite(report_path, report_image)
 
 診断結果が画像として出力され、白い背景で見づらかった問題が解決されました！🎯
 
+
+

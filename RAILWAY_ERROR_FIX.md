@@ -136,3 +136,5 @@ app.run(debug=False, host='0.0.0.0', port=port)
 
 エラーメッセージを確認して、具体的な問題を特定しましょう！
 
+
+
